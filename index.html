@@ -4,42 +4,119 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Créateur de CV Moderne - IA Intégrée</title>
-    
+
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- html2pdf.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
+
     <!-- SortableJS -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        },
+                        secondary: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-in': 'slideIn 0.3s ease-out',
+                        'bounce-subtle': 'bounceSubtle 0.6s ease-in-out',
+                        'pulse-slow': 'pulseSlow 3s infinite',
+                        'gradient': 'gradient 3s ease infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' }
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' }
+                        },
+                        bounceSubtle: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' }
+                        },
+                        pulseSlow: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' }
+                        },
+                        gradient: {
+                            '0%, 100%': { backgroundPosition: '0% 50%' },
+                            '50%': { backgroundPosition: '100% 50%' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
     <!-- Custom Styles -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        body {
             font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
         }
-        
+
         .cv-page {
             width: 210mm;
             min-height: 297mm;
             background: white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             margin: 0 auto 20px;
             position: relative;
             overflow: hidden;
+            border-radius: 12px;
+            transition: all 0.3s ease;
         }
-        
+
+        .cv-page:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.3);
+        }
+
         .cv-page.overflow-warning {
             border: 3px solid #ef4444;
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
         }
-        
+
         .section-handle {
             position: absolute;
             left: -30px;
@@ -47,7 +124,7 @@
             transform: translateY(-50%);
             width: 20px;
             height: 20px;
-            background: #3b82f6;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             border-radius: 50%;
             cursor: grab;
             display: none;
@@ -55,127 +132,1846 @@
             justify-content: center;
             color: white;
             font-size: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
+
         .cv-section:hover .section-handle {
             display: flex;
         }
-        
-        .column-resizer {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: transparent;
-            cursor: col-resize;
-            z-index: 10;
+
+        .skill-level {
+            height: 10px;
+            border-radius: 5px;
+            background: #f1f5f9;
+            overflow: hidden;
+            position: relative;
         }
-        
-        .column-resizer:hover {
-            background: #3b82f6;
+
+        .skill-level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 5px;
         }
-        
-        .is-resizing .column-resizer {
-            background: #3b82f6;
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
         }
-        
-        .ai-button {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 20px;
-            height: 20px;
-            background: #10b981;
-            border-radius: 50%;
-            display: none;
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 3px;
+        }
+
+        .banner-preview {
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 10px;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .banner-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .banner-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .banner-preview:hover img {
+            transform: scale(1.05);
+        }
+
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .skill-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 14px;
+            margin: 3px;
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .skill-tag:hover {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .presentation-mode {
+            background: #0f172a;
+            color: white;
+        }
+
+        .presentation-mode .cv-page {
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.7);
+        }
+
+        .tab-button {
+            position: relative;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .tab-button:hover {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 2px;
+            background: white;
+            border-radius: 1px;
+        }
+
+        .control-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .control-textarea {
+            min-height: 100px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8, #1e40af);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-lg {
+            padding: 14px 28px;
+            font-size: 16px;
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            padding: 0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .card-body {
+            padding: 24px;
+        }
+
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border-left: 4px solid;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+            border-left-color: #3b82f6;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-left-color: #10b981;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+
+        .alert-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-left-color: #ef4444;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .cv-section {
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .cv-section:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option.selected {
+            border-color: #000;
+            box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .font-option {
+            padding: 10px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .font-option:hover {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            transform: translateY(-1px);
+        }
+
+        .font-option.selected {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #f1f5f9;
+            border: 2px dashed #3b82f6;
+        }
+
+        .sortable-chosen {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+
+        .cv-builder {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .side-panel {
+            width: 420px;
+            background: rgba(255, 255, 255, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            overflow-y: auto;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .side-panel.collapsed {
+            width: 70px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-toolbar {
+            height: 70px;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .cv-preview {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .modal {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .dropdown-menu {
+            display: none;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .bounce {
+            animation: bounceSubtle 0.6s ease-in-out;
+        }
+
+        .pulse {
+            animation: pulseSlow 3s infinite;
+        }
+
+        @media (max-width: 1024px) {
+            .cv-builder {
+                flex-direction: column;
+            }
+
+            .side-panel {
+                width: 100%;
+                height: 350px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .cv-page {
+                width: 100%;
+                min-height: auto;
+            }
+
+            .top-toolbar {
+                height: 60px;
+                padding: 0 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .cv-page {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .top-toolbar .flex.items-center.gap-4 > h1 {
+                display: none;
+            }
+
+            .progress-bar {
+                width: 120px !important;
+            }
+        }
+
+        @media print {
+            .cv-builder,
+            .side-panel,
+            .top-toolbar {
+                display: none !important;
+            }
+
+            .cv-preview {
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            .cv-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                border-radius: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500">
+    <div class="cv-builder">
+        <!-- Top Toolbar -->
+        <div class="top-toolbar glass-effect">
+            <div class="flex items-center gap-6">
+                <button id="toggle-panel" class="btn btn-secondary icon-btn hover:scale-105 transition-transform" title="Masquer/Afficher le panneau">
+                    <i class="fas fa-bars text-lg"></i>
+                </button>
+                <h1 class="text-xl font-bold text-white drop-shadow-lg">Créateur de CV Moderne</h1>
+                <div class="flex items-center gap-3">
+                    <span class="text-white/80 text-sm font-medium">Progression</span>
+                    <div class="progress-bar" style="width: 200px;">
+                        <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <span id="progress-text" class="text-white/90 text-sm font-semibold">0%</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button id="undo-btn" class="btn btn-secondary icon-btn hover:scale-105 transition-transform" title="Annuler" disabled>
+                    <i class="fas fa-undo text-lg"></i>
+                </button>
+                <button id="redo-btn" class="btn btn-secondary icon-btn hover:scale-105 transition-transform" title="Rétablir" disabled>
+                    <i class="fas fa-redo text-lg"></i>
+                </button>
+                <button id="ai-analyze-btn" class="btn btn-primary hover:scale-105 transition-transform" title="Analyser avec IA">
+                    <i class="fas fa-brain"></i>
+                    <span class="hidden sm:inline">Analyser CV</span>
+                </button>
+                <button id="presentation-btn" class="btn btn-secondary icon-btn hover:scale-105 transition-transform" title="Mode présentation">
+                    <i class="fas fa-play text-lg"></i>
+                </button>
+                <button id="export-pdf-btn" class="btn btn-success hover:scale-105 transition-transform">
+                    <i class="fas fa-download"></i>
+                    <span class="hidden sm:inline">Exporter PDF</span>
+                </button>
+                <button id="save-cv-btn" class="btn btn-secondary hover:scale-105 transition-transform">
+                    <i class="fas fa-save"></i>
+                    <span class="hidden sm:inline">Sauvegarder</span>
+                </button>
+                <button id="load-cv-btn" class="btn btn-secondary hover:scale-105 transition-transform">
+                    <i class="fas fa-folder-open"></i>
+                    <span class="hidden sm:inline">Charger</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="side-panel" id="side-panel">
+            <div class="p-6">
+                <!-- Tabs -->
+                <div class="flex flex-wrap gap-1 mb-6 bg-white/50 rounded-xl p-1 backdrop-blur-sm">
+                    <button class="tab-button flex-1 min-w-0" data-tab="personal">
+                        <i class="fas fa-user mr-2"></i>
+                        <span class="hidden sm:inline">Personnel</span>
+                    </button>
+                    <button class="tab-button flex-1 min-w-0" data-tab="experience">
+                        <i class="fas fa-briefcase mr-2"></i>
+                        <span class="hidden sm:inline">Expérience</span>
+                    </button>
+                    <button class="tab-button flex-1 min-w-0" data-tab="education">
+                        <i class="fas fa-graduation-cap mr-2"></i>
+                        <span class="hidden sm:inline">Formation</span>
+                    </button>
+                    <button class="tab-button flex-1 min-w-0" data-tab="skills">
+                        <i class="fas fa-star mr-2"></i>
+                        <span class="hidden sm:inline">Compétences</span>
+                    </button>
+                    <button class="tab-button flex-1 min-w-0" data-tab="custom">
+                        <i class="fas fa-plus mr-2"></i>
+                        <span class="hidden sm:inline">Personnalisé</span>
+                    </button>
+                    <button class="tab-button flex-1 min-w-0" data-tab="style">
+                        <i class="fas fa-palette mr-2"></i>
+                        <span class="hidden sm:inline">Style</span>
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div id="tab-personal" class="tab-content active">
+                    <div class="space-y-6">
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-id-card text-blue-500"></i>
+                                Informations Personnelles
+                            </label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" id="first-name" class="control-input" placeholder="Prénom">
+                                <input type="text" id="last-name" class="control-input" placeholder="Nom">
+                            </div>
+                            <input type="email" id="email" class="control-input" placeholder="Email">
+                            <input type="tel" id="phone" class="control-input" placeholder="Téléphone">
+                            <input type="text" id="address" class="control-input" placeholder="Adresse">
+                            <input type="url" id="linkedin" class="control-input" placeholder="LinkedIn">
+                            <input type="url" id="website" class="control-input" placeholder="Site web">
+                            <textarea id="summary" class="control-input control-textarea" placeholder="Résumé professionnel"></textarea>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-camera text-green-500"></i>
+                                Photo de profil
+                            </label>
+                            <input type="file" id="photo-upload" accept="image/*" class="control-input">
+                            <button id="remove-photo" class="btn btn-danger btn-sm w-full mt-3">
+                                <i class="fas fa-trash"></i>
+                                Supprimer photo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-experience" class="tab-content">
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-6">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-briefcase text-purple-500"></i>
+                                Expériences Professionnelles
+                            </label>
+                            <button id="add-experience" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="experiences-list" class="space-y-4">
+                            <!-- Experiences will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-education" class="tab-content">
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-6">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-graduation-cap text-indigo-500"></i>
+                                Formation
+                            </label>
+                            <button id="add-education" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="education-list" class="space-y-4">
+                            <!-- Education will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-skills" class="tab-content">
+                    <div class="space-y-6">
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-cog text-orange-500"></i>
+                                Style des compétences
+                            </label>
+                            <select id="skills-style" class="control-input">
+                                <option value="tags">Tags colorés</option>
+                                <option value="levels">Barres de niveau</option>
+                                <option value="simple">Liste simple</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <div class="flex justify-between items-center mb-6">
+                                <label class="control-label flex items-center gap-2">
+                                    <i class="fas fa-star text-yellow-500"></i>
+                                    Compétences
+                                </label>
+                                <button id="add-skill" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-plus"></i>
+                                    Ajouter
+                                </button>
+                            </div>
+                            <div id="skills-list" class="space-y-3">
+                                <!-- Skills will be added here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+        .skill-level {
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            overflow: hidden;
         }
         
-        .cv-section:hover .ai-button {
+        .skill-level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            transition: width 0.3s ease;
+        }
+        
+        .banner-preview {
+            height: 120px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .banner-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .custom-section {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+        }
+        
+        .presentation-mode {
+            background: #1f2937;
+            color: white;
+        }
+        
+        .presentation-mode .cv-page {
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
         }
         
         .tooltip {
-            position: relative;
-        }
-        
-        .tooltip:hover::after {
-            content: attr(data-tooltip);
             position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1f2937;
+            background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 8px 12px;
+            border-radius: 6px;
             font-size: 12px;
-            white-space: nowrap;
             z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
         
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            color: white;
-            z-index: 1000;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
+        .tooltip.show {
+            opacity: 1;
         }
         
-        .toast.show {
-            transform: translateX(0);
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
         }
         
-        .toast.success { background: #10b981; }
-        .toast.error { background: #ef4444; }
-        .toast.warning { background: #f59e0b; }
-        .toast.info { background: #3b82f6; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        
+        .bounce {
+            animation: bounce 0.6s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .cv-section {
+            transition: all 0.3s ease;
+        }
+        
+        .cv-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tab-content {
             display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
         }
         
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f3f4f6;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .tab-content.active {
+            display: block;
         }
         
         .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
             display: none;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .dropdown-menu {
+            display: none;
+        }
+        
+        .dropdown-menu.show {
+            display: block;
+        }
+        
+        .color-picker {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            padding: 12px;
+        }
+        
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.2);
+        }
+        
+        .color-option.selected {
+            border-color: #000;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .font-picker {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        .font-option {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .font-option:hover {
+            background: #f3f4f6;
+        }
+        
+        .font-option.selected {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            margin: 2px;
+            background: #e5e7eb;
+            border-radius: 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .skill-tag:hover {
+            background: #d1d5db;
+        }
+        
+        .skill-tag.selected {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .sortable-ghost {
+            opacity: 0.4;
+        }
+        
+        .sortable-chosen {
+            opacity: 1;
+        }
+        
+        .cv-builder {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .side-panel {
+            width: 400px;
+            background: #f9fafb;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+            transition: width 0.3s ease;
+        }
+        
+        .side-panel.collapsed {
+            width: 60px;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .top-toolbar {
+            height: 60px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+        
+        .cv-preview {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+        
+        .tab-button {
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        
+        .tab-button:hover {
+            background: #f3f4f6;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #374151;
+        }
+        
+        .control-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .control-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .control-textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        .btn-lg {
+            padding: 12px 24px;
+            font-size: 16px;
+        }
+        
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+        
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 50%;
+            border-top-color: #3b82f6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .flex {
+            display: flex !important;
+        }
+        
+        .block {
+            display: block !important;
+        }
+        
+        .inline-block {
+            display: inline-block !important;
+        }
+        
+        .grid {
+            display: grid !important;
+        }
+        
+        .items-center {
+            align-items: center !important;
+        }
+        
+        .justify-center {
+            justify-content: center !important;
+        }
+        
+        .justify-between {
+            justify-content: space-between !important;
+        }
+        
+        .flex-col {
+            flex-direction: column !important;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem !important;
+        }
+        
+        .gap-4 {
+            gap: 1rem !important;
+        }
+        
+        .p-4 {
+            padding: 1rem !important;
+        }
+        
+        .px-4 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+        
+        .py-2 {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+        }
+        
+        .m-2 {
+            margin: 0.5rem !important;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .text-center {
+            text-align: center !important;
+        }
+        
+        .text-sm {
+            font-size: 0.875rem !important;
+        }
+        
+        .text-lg {
+            font-size: 1.125rem !important;
+        }
+        
+        .font-bold {
+            font-weight: 700 !important;
+        }
+        
+        .bg-blue-500 {
+            background-color: #3b82f6 !important;
+        }
+        
+        .bg-green-500 {
+            background-color: #10b981 !important;
+        }
+        
+        .bg-red-500 {
+            background-color: #ef4444 !important;
+        }
+        
+        .text-white {
+            color: white !important;
+        }
+        
+        .text-gray-600 {
+            color: #4b5563 !important;
+        }
+        
+        .border {
+            border: 1px solid #d1d5db !important;
+        }
+        
+        .border-gray-300 {
+            border-color: #d1d5db !important;
+        }
+        
+        .rounded {
+            border-radius: 0.25rem !important;
+        }
+        
+        .rounded-lg {
+            border-radius: 0.5rem !important;
+        }
+        
+        .shadow {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .shadow-lg {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .cursor-pointer {
+            cursor: pointer !important;
+        }
+        
+        .transition {
+            transition: all 0.2s ease !important;
+        }
+        
+        .hover\:bg-gray-100:hover {
+            background-color: #f3f4f6 !important;
+        }
+        
+        .hover\:shadow-lg:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .focus\:outline-none:focus {
+            outline: none !important;
+        }
+        
+        .focus\:ring:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        @media (max-width: 768px) {
+            .cv-builder {
+                flex-direction: column;
+            }
+            
+            .side-panel {
+                width: 100%;
+                height: 300px;
+            }
+            
+            .cv-page {
+                width: 100%;
+                min-height: auto;
+            }
+        }
+        
+        @media print {
+            .cv-builder,
+            .side-panel,
+            .top-toolbar {
+                display: none !important;
+            }
+            
+            .cv-preview {
+                padding: 0 !important;
+                background: white !important;
+            }
+            
+            .cv-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cv-builder">
+        <!-- Top Toolbar -->
+        <div class="top-toolbar">
+            <div class="flex items-center gap-4">
+                <button id="toggle-panel" class="btn btn-secondary icon-btn" title="Masquer/Afficher le panneau">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="text-lg font-bold text-gray-800">Créateur de CV Moderne</h1>
+                <div class="progress-bar" style="width: 200px;">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <button id="undo-btn" class="btn btn-secondary icon-btn" title="Annuler" disabled>
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button id="redo-btn" class="btn btn-secondary icon-btn" title="Rétablir" disabled>
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button id="ai-analyze-btn" class="btn btn-primary" title="Analyser avec IA">
+                    <i class="fas fa-brain"></i>
+                    Analyser CV
+                </button>
+                <button id="presentation-btn" class="btn btn-secondary icon-btn" title="Mode présentation">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button id="export-pdf-btn" class="btn btn-success">
+                    <i class="fas fa-download"></i>
+                    Exporter PDF
+                </button>
+                <button id="save-cv-btn" class="btn btn-secondary">
+                    <i class="fas fa-save"></i>
+                    Sauvegarder
+                </button>
+                <button id="load-cv-btn" class="btn btn-secondary">
+                    <i class="fas fa-folder-open"></i>
+                    Charger
+                </button>
+            </div>
+        </div>
+        
+        <!-- Side Panel -->
+        <div class="side-panel" id="side-panel">
+            <div class="p-4">
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200 mb-4">
+                    <button class="tab-button active" data-tab="personal">
+                        <i class="fas fa-user mr-2"></i>
+                        Personnel
+                    </button>
+                    <button class="tab-button" data-tab="experience">
+                        <i class="fas fa-briefcase mr-2"></i>
+                        Expérience
+                    </button>
+                    <button class="tab-button" data-tab="education">
+                        <i class="fas fa-graduation-cap mr-2"></i>
+                        Formation
+                    </button>
+                    <button class="tab-button" data-tab="skills">
+                        <i class="fas fa-star mr-2"></i>
+                        Compétences
+                    </button>
+                    <button class="tab-button" data-tab="custom">
+                        <i class="fas fa-plus mr-2"></i>
+                        Personnalisé
+                    </button>
+                    <button class="tab-button" data-tab="style">
+                        <i class="fas fa-palette mr-2"></i>
+                        Style
+                    </button>
+                </div>
+                
+                <!-- Tab Contents -->
+                <div id="tab-personal" class="tab-content active">
+                    <div class="control-group">
+                        <label class="control-label">Informations Personnelles</label>
+                        <input type="text" id="first-name" class="control-input" placeholder="Prénom">
+                        <input type="text" id="last-name" class="control-input" placeholder="Nom" style="margin-top: 8px;">
+                        <input type="email" id="email" class="control-input" placeholder="Email" style="margin-top: 8px;">
+                        <input type="tel" id="phone" class="control-input" placeholder="Téléphone" style="margin-top: 8px;">
+                        <input type="text" id="address" class="control-input" placeholder="Adresse" style="margin-top: 8px;">
+                        <input type="url" id="linkedin" class="control-input" placeholder="LinkedIn" style="margin-top: 8px;">
+                        <input type="url" id="website" class="control-input" placeholder="Site web" style="margin-top: 8px;">
+                        <textarea id="summary" class="control-input control-textarea" placeholder="Résumé professionnel" style="margin-top: 8px;"></textarea>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label class="control-label">Photo de profil</label>
+                        <input type="file" id="photo-upload" accept="image/*" class="control-input">
+                        <button id="remove-photo" class="btn btn-danger btn-sm" style="margin-top: 8px;">
+                            <i class="fas fa-trash"></i>
+                            Supprimer photo
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="tab-experience" class="tab-content">
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="control-label">Expériences Professionnelles</label>
+                            <button id="add-experience" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="experiences-list" class="space-y-4">
+                            <!-- Experiences will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-education" class="tab-content">
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="control-label">Formation</label>
+                            <button id="add-education" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="education-list" class="space-y-4">
+                            <!-- Education will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-skills" class="tab-content">
+                    <div class="control-group">
+                        <label class="control-label">Style des compétences</label>
+                        <select id="skills-style" class="control-input">
+                            <option value="tags">Tags</option>
+                            <option value="levels">Niveaux</option>
+                            <option value="simple">Simple</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="control-label">Compétences</label>
+                            <button id="add-skill" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="skills-list" class="space-y-2">
+                            <!-- Skills will be added here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-custom" class="tab-content">
+                    <div class="control-group">
+                        <div class="flex justify-between items-center mb-6">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-plus-circle text-purple-500"></i>
+                                Sections Personnalisées
+                            </label>
+                            <button id="add-custom-section" class="btn btn-primary btn-sm">
+                                <i class="fas fa-plus"></i>
+                                Ajouter
+                            </button>
+                        </div>
+                        <div id="custom-sections-list" class="space-y-4">
+                            <!-- Custom sections will be added here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-style" class="tab-content">
+                    <div class="space-y-6">
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-palette text-pink-500"></i>
+                                Thème
+                            </label>
+                            <select id="theme-select" class="control-input">
+                                <option value="modern">Moderne</option>
+                                <option value="classic">Classique</option>
+                                <option value="minimal">Minimal</option>
+                                <option value="creative">Créatif</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-fill-drip text-blue-500"></i>
+                                Couleur principale
+                            </label>
+                            <div class="grid grid-cols-4 gap-3" id="color-picker">
+                                <div class="color-option" data-color="#3b82f6" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);"></div>
+                                <div class="color-option" data-color="#10b981" style="background: linear-gradient(135deg, #10b981, #059669);"></div>
+                                <div class="color-option" data-color="#f59e0b" style="background: linear-gradient(135deg, #f59e0b, #d97706);"></div>
+                                <div class="color-option" data-color="#ef4444" style="background: linear-gradient(135deg, #ef4444, #dc2626);"></div>
+                                <div class="color-option" data-color="#8b5cf6" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);"></div>
+                                <div class="color-option" data-color="#06b6d4" style="background: linear-gradient(135deg, #06b6d4, #0891b2);"></div>
+                                <div class="color-option" data-color="#84cc16" style="background: linear-gradient(135deg, #84cc16, #65a30d);"></div>
+                                <div class="color-option" data-color="#f97316" style="background: linear-gradient(135deg, #f97316, #ea580c);"></div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-font text-indigo-500"></i>
+                                Police
+                            </label>
+                            <div class="grid grid-cols-2 gap-3" id="font-picker">
+                                <div class="font-option" data-font="Inter" style="font-family: 'Inter', sans-serif;">Inter</div>
+                                <div class="font-option" data-font="Arial" style="font-family: Arial, sans-serif;">Arial</div>
+                                <div class="font-option" data-font="Times New Roman" style="font-family: 'Times New Roman', serif;">Times</div>
+                                <div class="font-option" data-font="Georgia" style="font-family: Georgia, serif;">Georgia</div>
+                            </div>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-heading text-green-500"></i>
+                                Style des titres
+                            </label>
+                            <select id="title-style" class="control-input">
+                                <option value="bold">Gras</option>
+                                <option value="underline">Souligné</option>
+                                <option value="uppercase">Majuscules</option>
+                                <option value="normal">Normal</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-columns text-orange-500"></i>
+                                Mise en page
+                            </label>
+                            <select id="layout-select" class="control-input">
+                                <option value="single">1 colonne</option>
+                                <option value="two-left">2 colonnes (gauche)</option>
+                                <option value="two-right">2 colonnes (droite)</option>
+                                <option value="two-equal">2 colonnes (égales)</option>
+                            </select>
+                        </div>
+
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-image text-red-500"></i>
+                                Bannière Recruteur
+                            </label>
+                            <div class="banner-preview" id="banner-preview">
+                                <i class="fas fa-image fa-2x"></i>
+                            </div>
+                            <div class="mt-4 space-y-3">
+                                <input type="text" id="banner-title" class="control-input" placeholder="Titre de la bannière">
+                                <input type="text" id="banner-subtitle" class="control-input" placeholder="Sous-titre">
+                                <input type="file" id="banner-image" accept="image/*" class="control-input">
+                                <select id="banner-style" class="control-input">
+                                    <option value="gradient">Dégradé</option>
+                                    <option value="solid">Couleur unie</option>
+                                    <option value="image">Image</option>
+                                </select>
+                                <input type="color" id="banner-color" class="control-input" value="#667eea">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- CV Preview -->
+            <div class="cv-preview">
+                <div class="cv-page" id="cv-page">
+                    <!-- Banner Section -->
+                    <div class="banner-section hidden" id="banner-section">
+                        <div class="banner-content" id="banner-content">
+                            <h1 class="banner-title text-4xl font-bold text-white mb-2" id="banner-title-display"></h1>
+                            <p class="banner-subtitle text-xl text-white/90" id="banner-subtitle-display"></p>
+                        </div>
+                    </div>
+
+                    <!-- Personal Info Section -->
+                    <div class="personal-section p-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-t-2xl">
+                        <div class="flex items-start gap-6">
+                            <div class="profile-photo hidden" id="profile-photo-container">
+                                <img id="profile-photo" alt="Photo de profil" class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg">
+                            </div>
+                            <div class="flex-1">
+                                <h1 class="name text-3xl font-bold text-gray-800 mb-3" id="name-display">Votre Nom</h1>
+                                <div class="contact-info grid grid-cols-1 md:grid-cols-2 gap-2 mb-4" id="contact-info">
+                                    <div class="contact-item flex items-center gap-2 text-gray-600" id="email-display"></div>
+                                    <div class="contact-item flex items-center gap-2 text-gray-600" id="phone-display"></div>
+                                    <div class="contact-item flex items-center gap-2 text-gray-600" id="address-display"></div>
+                                    <div class="contact-item flex items-center gap-2 text-gray-600" id="linkedin-display"></div>
+                                    <div class="contact-item flex items-center gap-2 text-gray-600" id="website-display"></div>
+                                </div>
+                                <div class="summary text-gray-700 leading-relaxed" id="summary-display"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Experience Section -->
+                    <div class="cv-section p-8 bg-white border-b border-gray-100">
+                        <h2 class="section-title text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <div class="w-1 h-8 bg-blue-500 rounded-full"></div>
+                            Expérience Professionnelle
+                        </h2>
+                        <div id="experience-content" class="space-y-6">
+                            <!-- Experience items will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Education Section -->
+                    <div class="cv-section p-8 bg-gray-50 border-b border-gray-100">
+                        <h2 class="section-title text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <div class="w-1 h-8 bg-green-500 rounded-full"></div>
+                            Formation
+                        </h2>
+                        <div id="education-content" class="space-y-6">
+                            <!-- Education items will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Skills Section -->
+                    <div class="cv-section p-8 bg-white border-b border-gray-100">
+                        <h2 class="section-title text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                            <div class="w-1 h-8 bg-purple-500 rounded-full"></div>
+                            Compétences
+                        </h2>
+                        <div id="skills-content">
+                            <!-- Skills will be added here -->
+                        </div>
+                    </div>
+
+                    <!-- Custom Sections -->
+                    <div id="custom-sections">
+                        <!-- Custom sections will be added here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- AI Analysis Modal -->
+    <div id="ai-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-brain text-blue-500"></i>
+                        Analyse IA du CV
+                    </h3>
+                    <button class="modal-close text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div class="p-6">
+                <textarea id="job-description" placeholder="Collez ici la description du poste..." class="control-input control-textarea mb-4" rows="6"></textarea>
+                <button id="analyze-job-btn" class="btn btn-primary w-full mb-4">
+                    <i class="fas fa-brain"></i>
+                    Analyser et suggérer des améliorations
+                </button>
+                <div id="ai-results" class="hidden">
+                    <h4 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-lightbulb text-yellow-500"></i>
+                        Suggestions d'amélioration :
+                    </h4>
+                    <div id="ai-suggestions" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-download text-green-500"></i>
+                        Exporter le CV
+                    </h3>
+                    <button class="modal-close text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="control-label">Nom du fichier</label>
+                    <input type="text" id="export-filename" class="control-input" placeholder="mon-cv.pdf">
+                </div>
+                <div>
+                    <label class="control-label">Qualité</label>
+                    <select id="export-quality" class="control-input">
+                        <option value="high">Haute</option>
+                        <option value="medium">Moyenne</option>
+                        <option value="low">Basse</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="include-banner" checked class="rounded">
+                    <label for="include-banner" class="text-sm text-gray-700">Inclure la bannière</label>
+                </div>
+                <button id="confirm-export-btn" class="btn btn-success w-full">
+                    <i class="fas fa-download"></i>
+                    Exporter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Modal -->
+    <div id="save-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-save text-blue-500"></i>
+                        Sauvegarder le CV
+                    </h3>
+                    <button class="modal-close text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="control-label">Nom du CV</label>
+                    <input type="text" id="cv-name" class="control-input" placeholder="Mon CV">
+                </div>
+                <button id="confirm-save-btn" class="btn btn-primary w-full">
+                    <i class="fas fa-save"></i>
+                    Sauvegarder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Modal -->
+    <div id="load-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-folder-open text-purple-500"></i>
+                        Charger un CV
+                    </h3>
+                    <button class="modal-close text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div id="saved-cvs-list" class="space-y-2">
+                    <!-- Saved CVs will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center">
+            <div class="loading-spinner mb-4"></div>
+            <p class="text-gray-700" id="loading-text">Chargement...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
             z-index: 1500;
         }
         
