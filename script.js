@@ -1,4 +1,4 @@
-// Créateur de CV Moderne - JavaScript Complet avec Nouvelles Fonctionnalités
+// Créateur de CV Moderne - Version Simplifiée et Robuste
 class CVBuilder {
     constructor() {
         this.currentTab = 'personal';
@@ -25,16 +25,51 @@ class CVBuilder {
         this.redoStack = [];
         this.maxUndoSteps = 50;
 
-        this.init();
+        // Attendre que le DOM soit chargé
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
+    }
+
+    // Vérification des dépendances
+    checkDependencies() {
+        const dependencies = {
+            'TailwindCSS': typeof tailwind !== 'undefined',
+            'Font Awesome': typeof FontAwesome !== 'undefined' || document.querySelector('link[href*="font-awesome"]'),
+            'html2pdf': typeof html2pdf !== 'undefined',
+            'SortableJS': typeof Sortable !== 'undefined'
+        };
+
+        console.log('Vérification des dépendances:');
+        Object.entries(dependencies).forEach(([name, loaded]) => {
+            console.log(`${name}: ${loaded ? '✅' : '❌'}`);
+        });
+
+        return Object.values(dependencies).every(dep => dep);
     }
 
     init() {
-        this.loadFromStorage();
-        this.setupEventListeners();
-        this.initializeSortable();
-        this.updateProgress();
-        this.updateBannerPreview();
-        this.renderAll();
+        console.log('CV Builder initialisé');
+        try {
+            // Vérifier les dépendances
+            const dependenciesOk = this.checkDependencies();
+
+            this.loadFromStorage();
+            this.setupEventListeners();
+            this.initializeSortable();
+            this.updateProgress();
+            this.updateBannerPreview();
+            this.renderAll();
+            console.log('CV Builder prêt');
+
+            if (!dependenciesOk) {
+                console.warn('Certaines dépendances ne sont pas chargées correctement');
+            }
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation:', error);
+        }
     }
 
     // Configuration des événements
@@ -125,6 +160,8 @@ class CVBuilder {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener(event, handler);
+        } else {
+            console.warn(`Élément avec l'ID '${id}' non trouvé`);
         }
     }
 
@@ -883,17 +920,22 @@ class CVBuilder {
     }
 
     renderAll() {
-        this.renderExperiences();
-        this.renderEducation();
-        this.renderSkills();
-        this.renderCustomSections();
-        this.updateBannerDisplay();
-        this.applyTheme();
-        this.applyLayout();
-        this.applyTitleStyle();
-        this.updateColorSelection();
-        this.updateFontSelection();
-        this.updateProgress();
+        try {
+            this.renderExperiences();
+            this.renderEducation();
+            this.renderSkills();
+            this.renderCustomSections();
+            this.updateBannerDisplay();
+            this.applyTheme();
+            this.applyLayout();
+            this.applyTitleStyle();
+            this.updateColorSelection();
+            this.updateFontSelection();
+            this.updateProgress();
+            console.log('Rendu complet terminé');
+        } catch (error) {
+            console.error('Erreur lors du rendu:', error);
+        }
     }
 
     // Modales
@@ -1090,24 +1132,48 @@ class CVBuilder {
     }
 
     loadFromStorage() {
-        const data = localStorage.getItem('cv_builder_data');
-        if (data) {
-            const parsed = JSON.parse(data);
-            this.restoreState(parsed);
-            this.setPersonalInfo(parsed.personalInfo || {});
+        try {
+            const data = localStorage.getItem('cv_builder_data');
+            if (data) {
+                const parsed = JSON.parse(data);
+                this.restoreState(parsed);
+                if (parsed.personalInfo) {
+                    this.setPersonalInfo(parsed.personalInfo);
+                }
+            }
+            console.log('Données chargées depuis le stockage local');
+        } catch (error) {
+            console.error('Erreur lors du chargement des données:', error);
+            // Réinitialiser les données en cas d'erreur
+            this.experiences = [];
+            this.education = [];
+            this.skills = [];
+            this.customSections = [];
         }
     }
 
     // Initialisation de SortableJS
     initializeSortable() {
-        const sections = document.querySelectorAll('.cv-section');
-        sections.forEach(section => {
-            new Sortable(section.parentElement, {
-                handle: '.section-handle',
-                animation: 150,
-                onEnd: () => this.saveToHistory()
-            });
-        });
+        try {
+            // Attendre un peu que le DOM soit complètement chargé
+            setTimeout(() => {
+                const sections = document.querySelectorAll('.cv-section');
+                if (sections.length > 0) {
+                    sections.forEach(section => {
+                        if (section.parentElement) {
+                            new Sortable(section.parentElement, {
+                                handle: '.section-handle',
+                                animation: 150,
+                                onEnd: () => this.saveToHistory()
+                            });
+                        }
+                    });
+                    console.log('SortableJS initialisé');
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Erreur lors de l\'initialisation de SortableJS:', error);
+        }
     }
 
     // Raccourcis clavier
