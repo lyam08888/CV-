@@ -4,7 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Créateur de CV IA - Pro Recruteur</title>
+    <!-- TailwindCSS from CDN (for development) - Replace with local build for production -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // TailwindCSS configuration
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'lato': ['Lato', 'sans-serif'],
+                        'montserrat': ['Montserrat', 'sans-serif'],
+                        'playfair': ['Playfair Display', 'serif'],
+                        'roboto-mono': ['Roboto Mono', 'monospace'],
+                        'merriweather': ['Merriweather', 'serif'],
+                        'oswald': ['Oswald', 'sans-serif'],
+                        'cormorant': ['Cormorant Garamond', 'serif'],
+                        'open-sans': ['Open Sans', 'sans-serif'],
+                        'source-sans': ['Source Sans Pro', 'sans-serif'],
+                        'nunito-sans': ['Nunito Sans', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto+Mono:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Open+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Nunito+Sans:wght@400;700&display=swap" rel="stylesheet">
@@ -243,7 +265,6 @@
         /* For column resizing */
         .column-resizer {
             position: absolute;
-<<<<<<< HEAD
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 8px 12px;
@@ -681,8 +702,7 @@
             to { transform: rotate(360deg); }
         }
         
-        .hidden {
-=======
+        .column-resizer {
             top: 0;
             bottom: 0;
             width: 10px; /* Wider grab area */
@@ -722,7 +742,6 @@
         body.presentation-mode .delete-block-btn,
         body.presentation-mode .delete-line-btn,
         body.presentation-mode .insert-line-wrapper {
->>>>>>> 1cbd590fac9fef71d45a18bda4b0dad0eb7d853f
             display: none !important;
         }
         /* NEW: Completely hide the module in presentation mode if hidden */
@@ -742,7 +761,6 @@
             .cv-column {
                 border-color: transparent !important;
             }
-<<<<<<< HEAD
             
             .cv-page {
                 box-shadow: none !important;
@@ -783,6 +801,10 @@
                 </button>
                 <button id="overflow-detection-btn" class="btn btn-secondary icon-btn" title="DÉTECTION DÉPASSEMENT — surligne les pages qui débordent (aide à la mise en page)">
                     <i class="fas fa-exclamation-triangle"></i>
+                </button>
+                <button id="ai-analyze-btn" class="btn btn-primary hover:scale-105 transition-transform" title="Analyser avec IA">
+                    <i class="fas fa-brain"></i>
+                    <span class="hidden sm:inline">Analyser CV</span>
                 </button>
                 <button id="presentation-btn" class="btn btn-secondary icon-btn" title="MODE PRÉSENTATION — masque tous les éléments d'édition pour une vue propre">
                     <i class="fas fa-play"></i>
@@ -1053,7 +1075,7 @@
                                     <div id="profile-photo-preview" class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
                                         <i class="fas fa-user text-gray-400 text-2xl"></i>
                                     </div>
-                                    <input type="file" id="profile-photo-upload" accept="image/*" class="hidden">
+                                    <input type="file" id="photo-upload" accept="image/*" class="hidden">
                                     <button id="upload-photo-btn" class="absolute -bottom-2 -right-2 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm" title="Changer la photo">
                                         <i class="fas fa-camera"></i>
                                     </button>
@@ -1065,7 +1087,7 @@
                                     <button id="photo-size-xl" class="btn btn-secondary btn-sm" data-size="xl" title="Taille XL">XL</button>
                                 </div>
                             </div>
-                            <button id="remove-profile-photo" class="btn btn-danger btn-sm" title="Supprimer la photo">
+                            <button id="remove-photo" class="btn btn-danger btn-sm" title="Supprimer la photo">
                                 <i class="fas fa-trash"></i>
                                 Supprimer
                             </button>
@@ -1197,6 +1219,30 @@
                                 <option value="two-right">2 colonnes (droite)</option>
                                 <option value="two-equal">2 colonnes (égales)</option>
                             </select>
+                            
+                            <!-- Layout Control Buttons -->
+                            <div class="mt-3 grid grid-cols-2 gap-2">
+                                <button id="layout-single" class="layout-btn bg-blue-500 text-white py-2 px-3 rounded-md hover:bg-blue-600 transition-colors text-sm">
+                                    <i class="fas fa-square mr-1"></i>1 Colonne
+                                </button>
+                                <button id="layout-50-50" class="layout-btn bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded-md transition-colors text-sm">
+                                    <i class="fas fa-columns mr-1"></i>50/50
+                                </button>
+                                <button id="layout-33-67" class="layout-btn bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded-md transition-colors text-sm">
+                                    <i class="fas fa-columns mr-1"></i>33/67
+                                </button>
+                                <button id="layout-67-33" class="layout-btn bg-gray-200 hover:bg-gray-300 py-2 px-3 rounded-md transition-colors text-sm">
+                                    <i class="fas fa-columns mr-1"></i>67/33
+                                </button>
+                            </div>
+                            
+                            <!-- Inverted Layout Toggle -->
+                            <div class="mt-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" id="inverted-layout" class="w-4 h-4 text-blue-600 rounded">
+                                    <span class="text-sm">Disposition inversée</span>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="control-group">
@@ -1467,8 +1513,6 @@
         }
         
         @media print {
-=======
->>>>>>> 1cbd590fac9fef71d45a18bda4b0dad0eb7d853f
             .no-print {
                 display: none !important;
             }
@@ -1816,6 +1860,23 @@
                      <button id="add-page-btn" title="Ajouter une page"><i class="fas fa-plus"></i></button>
                  </div>
             </div>
+            
+            <!-- Zoom Controls -->
+            <div class="fixed bottom-6 right-6 bg-white rounded-lg shadow-lg p-3 flex items-center gap-2 z-50 no-print">
+                <button id="zoom-out" class="zoom-btn p-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors" title="Zoom arrière">
+                    <i class="fas fa-search-minus"></i>
+                </button>
+                <div class="flex items-center gap-2">
+                    <input type="range" id="zoom-slider" min="50" max="200" value="100" class="zoom-slider w-20 h-2 bg-gray-200 rounded-lg cursor-pointer">
+                    <span id="zoom-value" class="text-sm font-medium min-w-[35px]">100%</span>
+                </div>
+                <button id="zoom-in" class="zoom-btn p-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors" title="Zoom avant">
+                    <i class="fas fa-search-plus"></i>
+                </button>
+                <button id="zoom-reset" class="zoom-btn p-2 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors" title="Réinitialiser le zoom">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
         </div>
     </div>
     
@@ -1854,6 +1915,119 @@
             <div class="flex justify-end gap-4">
                 <button id="confirm-modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Annuler</button>
                 <button id="confirm-modal-ok-btn" class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accessibility Modal -->
+    <div id="accessibility-modal" class="modal-overlay">
+        <div class="modal-content max-w-md">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Paramètres d'Accessibilité</h2>
+                <button id="close-accessibility" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <!-- Text Size -->
+                <div class="control-group">
+                    <label class="control-label flex items-center gap-2">
+                        <i class="fas fa-text-height text-blue-500"></i>
+                        Taille du texte
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="text-size-slider" min="80" max="150" value="100" step="5" class="flex-1">
+                        <span id="text-size-value" class="text-sm font-medium min-w-[40px]">100%</span>
+                    </div>
+                </div>
+
+                <!-- Line Spacing -->
+                <div class="control-group">
+                    <label class="control-label flex items-center gap-2">
+                        <i class="fas fa-align-left text-green-500"></i>
+                        Interligne
+                    </label>
+                    <div class="flex items-center gap-3">
+                        <input type="range" id="line-spacing-slider" min="100" max="200" value="140" step="10" class="flex-1">
+                        <span id="line-spacing-value" class="text-sm font-medium min-w-[40px]">140%</span>
+                    </div>
+                </div>
+
+                <!-- Keyboard Focus -->
+                <div class="control-group">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="keyboard-focus" class="w-4 h-4 text-blue-600 rounded">
+                        <div>
+                            <div class="font-medium">Navigation clavier améliorée</div>
+                            <div class="text-sm text-gray-600">Met en évidence les éléments focusables</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Reduce Animations -->
+                <div class="control-group">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="reduce-animations" class="w-4 h-4 text-blue-600 rounded">
+                        <div>
+                            <div class="font-medium">Réduire les animations</div>
+                            <div class="text-sm text-gray-600">Désactive les transitions et animations</div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- Screen Reader Support -->
+                <div class="control-group">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" id="screen-reader" class="w-4 h-4 text-blue-600 rounded">
+                        <div>
+                            <div class="font-medium">Support lecteur d'écran</div>
+                            <div class="text-sm text-gray-600">Améliore la compatibilité avec les lecteurs d'écran</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t">
+                <button id="reset-accessibility" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                    Réinitialiser
+                </button>
+                <button id="save-accessibility" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    Appliquer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div id="templates-modal" class="modal-overlay">
+        <div class="modal-content max-w-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Gestionnaire de Templates</h2>
+                <button id="close-templates" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex gap-3">
+                    <button id="save-template-btn" class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Sauvegarder Template
+                    </button>
+                    <button id="export-templates-btn" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Exporter
+                    </button>
+                    <button id="import-templates-btn" class="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
+                        <i class="fas fa-upload mr-2"></i>Importer
+                    </button>
+                </div>
+                
+                <div class="border rounded-lg p-4 max-h-96 overflow-y-auto">
+                    <h3 class="font-semibold mb-3">Templates sauvegardés</h3>
+                    <div id="templates-list" class="space-y-2">
+                        <!-- Templates will be loaded here -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
