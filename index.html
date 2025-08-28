@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur de CV IA - Pro Recruteur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Montserrat:wght@400;500;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Roboto+Mono:wght@400;700&family=Merriweather:wght@400;700&family=Oswald:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Open+Sans:wght@400;700&family=Source+Sans+Pro:wght@400;700&family=Nunito+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <style>
+        :root {
+            --page-margin: 2cm;
+            --primary-color: #2563eb;
+            --secondary-color: #334155;
+            --body-text-color: #334155;
+            --font-family-h1: 'Montserrat', sans-serif;
+            --font-family-h2: 'Montserrat', sans-serif;
+            --font-family-body: 'Lato', sans-serif;
+            --font-size-h1: 40pt;
+            --font-size-h2: 21pt;
+            --font-size-p: 10pt;
+            --font-size-banner: 9pt;
+            --line-height: 1.6;
+            --paragraph-spacing: 0.5rem;
+            --module-spacing: 1.5rem;
+            --item-spacing: 0.5rem;
+            --banner-element-spacing: 1rem;
+        }
+
+        #cv-preview-wrapper { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .a4-page-container { position: relative; }
+        /* CORRECTIF : Remplacement de min-height par height pour une détection de dépassement fiable */
+        .a4-page { width: 21cm; height: 29.7cm; box-shadow: 0 10px 30px rgba(0,0,0,0.15); background-color: white; overflow: hidden; display: flex; flex-direction: column; transition: all 0.3s ease; font-family: var(--font-family-body); color: var(--body-text-color); position: relative; outline: 2px solid transparent; outline-offset: -2px; padding: var(--page-margin); box-sizing: border-box; }
+        body.overflow-check-active .is-overflowing { outline: 3px solid #ef4444 !important; box-shadow: 0 0 20px 8px rgba(239, 68, 68, 0.3) !important; }
+        
+        .remove-page-btn { position: absolute; top: -10px; right: -10px; width: 30px; height: 30px; background-color: #ef4444; color: white; border: none; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0.5; transition: opacity 0.2s, transform 0.2s; z-index: 10; }
+        .remove-page-btn:hover { opacity: 1; transform: scale(1.1); }
+        .a4-page-container:first-child .remove-page-btn { display: none; }
+
+        #add-page-btn-wrapper { width: 21cm; text-align: center; padding: 10px 0; }
+        #add-page-btn { width: 50px; height: 50px; background-color: #3b82f6; color: white; border-radius: 50%; border: none; cursor: pointer; font-size: 24px; transition: transform 0.2s; }
+        #add-page-btn:hover { transform: scale(1.1); }
+
+        .cv-body-container { display: grid; gap: 1rem; height: 100%; flex-grow: 1; position: relative; }
+        .layout-1-col { grid-template-columns: 1fr; }
+        .layout-2-col-33-67 { grid-template-columns: 1fr 2fr; }
+        .layout-2-col-50-50 { grid-template-columns: 1fr 1fr; }
+        .layout-2-col-67-33 { grid-template-columns: 2fr 1fr; }
+
+        .cv-column { min-height: 150px; height: 100%; border: 1px dotted #ccc; padding: 5px; }
+        .cv-module { position: relative; margin-bottom: var(--module-spacing); }
+        .cv-module .drag-handle { position: absolute; top: 10px; left: -25px; cursor: grab; color: #d1d5db; opacity: 0; transition: opacity 0.2s; font-size: 1.2rem; }
+        .cv-module:hover .drag-handle { opacity: 1; }
+        .sortable-ghost { opacity: 0.4; background: #cce7ff; border: 1px dashed var(--primary-color); }
+
+        [contenteditable="true"]:hover { outline: 1px dashed #3b82f6; background-color: #eff6ff; }
+        [contenteditable="true"]:focus { outline: 2px solid #3b82f6; background-color: #dbeafe; }
+
+        .cv-header h1 { font-family: var(--font-family-h1); font-weight: 800; font-size: var(--font-size-h1); color: var(--primary-color); margin-bottom: 0.25rem; }
+        .cv-header p { font-family: var(--font-family-body); font-size: 1.2rem; color: var(--secondary-color); }
+        .section-title { font-family: var(--font-family-h2); font-weight: 700; font-size: var(--font-size-h2); margin-bottom: 0.8rem; padding-bottom: 0.4rem; color: var(--primary-color); display: flex; align-items: center; gap: 0.5rem; transition: opacity 0.3s; }
+        .section-title.style-underline { border-bottom: 2px solid var(--primary-color); }
+        .section-title.style-side-line { border-left: 4px solid var(--primary-color); border-bottom: none; padding-left: 0.5rem; }
+        .section-title.style-background { background-color: var(--primary-color); color: white; padding: 0.3rem 0.6rem; margin-bottom: 1rem; border-radius: 0.25rem; }
+        .section-title.style-background .section-icon { color: white !important; }
+        .section-title.style-boxed { border: 2px solid var(--primary-color); padding: 0.3rem 0.6rem; }
+
+        .section-title .section-icon { cursor: pointer; transition: transform 0.2s; }
+        .section-title .section-icon:hover { transform: scale(1.1); }
+        .a4-page p, .a4-page li, #cv-description-preview, #cv-experience-preview, #cv-formation-preview { font-size: var(--font-size-p); line-height: var(--line-height); }
+        .a4-page p { margin-bottom: var(--paragraph-spacing); }
+        .a4-page ul { list-style: none; padding-left: 0;}
+        #cv-competences-preview[data-style="simple"] ul li,
+        .a4-page ul li { padding-left: 1.4em; position: relative; margin-bottom: 0.25rem; }
+        #cv-competences-preview[data-style="simple"] ul li::before,
+        .a4-page ul li::before { content: '›'; font-weight: bold; position: absolute; left: 0; color: var(--primary-color); font-size: 1.2em; top: -0.1em; }
+        
+        .item-title { font-weight: 700; color: var(--secondary-color); }
+        .item-meta { font-size: calc(var(--font-size-p) * 0.9); font-style: italic; }
+
+        #recruiter-banner { display: flex; align-items: center; padding: 0.5rem; box-sizing: border-box; width: 100%; font-size: var(--font-size-banner); position: relative; overflow: hidden; }
+        .banner-content-wrapper { position: relative; z-index: 1; display: flex; align-items: center; width: 100%; height: 100%; gap: var(--banner-element-spacing); }
+        #banner-bg-img-preview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transition: opacity 0.3s, filter 0.3s; }
+        #fixed-banner-top { margin-bottom: var(--module-spacing); display: none; }
+        #fixed-banner-bottom { margin-top: auto; padding-top: var(--module-spacing); display: none; }
+        #banner-img-preview { border-radius: 50%; object-fit: cover; flex-shrink: 0; transition: width 0.3s, height 0.3s; background-color: rgba(255,255,255,0.5); }
+        #banner-img-preview.logo-sm { width: 40px; height: 40px; }
+        #banner-img-preview.logo-md { width: 60px; height: 60px; }
+        #banner-img-preview.logo-lg { width: 80px; height: 80px; }
+        #banner-img-preview.logo-xl { width: 100px; height: 100px; }
+        #banner-img-preview.logo-xxl { width: 120px; height: 120px; }
+        #banner-nom-preview { font-weight: 700; }
+        .banner-align-left { justify-content: flex-start; text-align: left; }
+        .banner-align-center { justify-content: center; text-align: center; }
+        .banner-align-right { justify-content: flex-end; text-align: right; }
+        .banner-layout-inverted { flex-direction: row-reverse; }
+        .banner-style-elegant { border-top: 2px solid var(--primary-color); border-bottom: 2px solid var(--primary-color); background: transparent; }
+        .banner-style-modern { background-color: var(--primary-color); color: white; border-radius: 0.5rem; }
+        .banner-style-modern p, .banner-style-modern span { color: white !important; }
+        .banner-style-discret { border-left: 4px solid #d1d5db; background: transparent; }
+        .banner-style-carte { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); border-radius: 0.5rem; background: #f9fafb; }
+        .banner-style-degrade { background: linear-gradient(to right, var(--primary-color), #a5b4fc); color: white; border-radius: 0.5rem; }
+        .banner-style-degrade p, .banner-style-degrade span { color: white !important; }
+        .banner-style-premium { background-color: #1e293b; color: #fde68a; border: 1px solid #fde68a; border-radius: 0.25rem; }
+        .banner-style-premium p, .banner-style-premium span { color: #f1f5f9 !important; }
+        .banner-style-minimal { border-bottom: 2px solid var(--primary-color); }
+        .banner-style-encadre { border: 2px solid var(--primary-color); border-radius: 0.5rem; }
+        .banner-style-ligne-haute { border-top: 4px solid var(--primary-color); padding-top: 0.8rem !important; }
+
+        #notification { position: fixed; top: 20px; right: 20px; z-index: 10000; }
+        .toast { background-color: white; color: #111827; padding: 1rem 1.5rem; border-radius: 0.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 0.75rem; transition: all 0.3s ease; transform: translateX(120%); }
+        .toast.show { transform: translateX(0); }
+
+        /* Styles for collapsible control panel sections */
+        details.control-group {
+            background-color: #f9fafb;
+            border: 1px solid #f3f4f6;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        details.control-group[open] {
+            background-color: white;
+            border-color: #e5e7eb;
+        }
+        details.control-group summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 1rem;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        details.control-group summary::-webkit-details-marker {
+            display: none;
+        }
+        details.control-group .control-group-content {
+            padding: 0 1rem 1rem 1rem;
+            border-top: 1px solid #f3f4f6;
+            margin-top: -0.5rem;
+            padding-top: 1rem;
+        }
+        .completion-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: #6b7280;
+            cursor: pointer;
+        }
+        .completion-checkbox {
+            height: 1rem;
+            width: 1rem;
+            border-radius: 0.25rem;
+            border-color: #d1d5db;
+            color: #4f46e5;
+            cursor: pointer;
+        }
+        .completion-checkbox:focus {
+            ring: #4f46e5;
+        }
+        
+        #ai-summarize-btn { position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #2563eb; color: white; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); font-size: 24px; z-index: 999; transition: transform 0.2s ease-in-out; }
+        #ai-summarize-btn:hover { transform: scale(1.1); }
+
+        /* --- Specific styles for skills section --- */
+        #cv-competences-preview h3.skill-category { font-family: var(--font-family-h2); font-weight: 700; color: var(--secondary-color); margin-top: 0.8rem; margin-bottom: 0.4rem; padding-bottom: 0.2rem; border-bottom: 1px solid #e5e7eb; font-size: calc(var(--font-size-p) * 1.05); text-transform: uppercase; letter-spacing: 0.5px; }
+        #cv-competences-preview .skill-category:hover { background-color: #f3f4f6; }
+        #cv-competences-preview[data-style="tags"] ul { padding-left: 0; list-style: none; margin-top: 0.25rem; margin-bottom: 0.5rem; line-height: 1.5; }
+        #cv-competences-preview[data-style="tags"] ul li.skill-item { display: inline-block; margin: 0 8px 6px 0; padding: 3px 20px 3px 10px; border-radius: 12px; background-color: #f3f4f6; font-size: calc(var(--font-size-p) * 0.95); position: relative; cursor: grab; }
+        #cv-competences-preview[data-style="tags"] ul li.skill-item:hover { background-color: #e5e7eb; }
+        #cv-competences-preview[data-style="tags"] ul li::before { content: none; }
+        .skills-ghost { opacity: 0.4; background: #cce7ff; border-radius: 12px; }
+        .skill-item .delete-skill-btn { display: none; position: absolute; top: 50%; right: 5px; transform: translateY(-50%); cursor: pointer; font-size: 14px; line-height: 1; color: #9ca3af; padding: 2px; }
+        .skill-item:hover .delete-skill-btn { display: inline-block; }
+        .skill-item .delete-skill-btn:hover { color: #ef4444; }
+        .style-toggle-btn.active, .skill-style-btn.active, .section-title-style-btn.active, .layout-btn.active, .banner-align-btn.active, .logo-size-btn.active, .theme-btn.active, #banner-invert-btn.active, .gauge-style-btn.active, #toggle-overflow-btn.active { background-color: #3b82f6; color: white; }
+        .skill-level { display: flex; align-items: center; margin-bottom: 6px; gap: 8px; }
+        .skill-level-label { width: 120px; flex-shrink: 0; font-size: var(--font-size-p); }
+        
+        /* Gauge Styles */
+        .gauge-container { flex-grow: 1; }
+        .gauge-bar-bg { background-color: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;}
+        .gauge-bar-fill { background-color: var(--primary-color); height: 100%; border-radius: 4px; transition: width 0.3s ease; }
+        .gauge-dots, .gauge-stars, .gauge-squares { display: flex; gap: 4px; font-size: 1.2em; color: #d1d5db; }
+        .gauge-dots .filled, .gauge-stars .filled, .gauge-squares .filled { color: var(--primary-color); }
+        .gauge-number { font-weight: bold; color: var(--secondary-color); }
+
+        .editable-wrapper { position: relative; }
+        .editable-wrapper .delete-line-btn { display: none; position: absolute; top: 50%; right: 2px; transform: translateY(-50%); cursor: pointer; color: #ef4444; background-color: white; border-radius: 50%; width: 18px; height: 18px; text-align: center; line-height: 18px; font-size: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); z-index: 5; }
+        .editable-wrapper:hover .delete-line-btn { display: flex; align-items: center; justify-content: center; }
+        .history-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .insert-line-wrapper { position: relative; height: 0.5rem; opacity: 0; transition: opacity 0.2s; margin: 0; display: flex; justify-content: center; align-items: center; }
+        .dynamic-item-container:hover .insert-line-wrapper { opacity: 1; }
+        .add-line-preview-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #eef2ff; color: #4f46e5; border: 1px dashed #a5b4fc; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; z-index: 5; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.2s; }
+        .add-line-preview-btn:hover { background: #c7d2fe; border-style: solid; transform: translate(-50%, -50%) scale(1.1); }
+        
+        .add-desc-line-btn { display: none; font-size: 0.8rem; color: #4f46e5; cursor: pointer; margin-top: 0.25rem; padding: 2px 4px; border-radius: 4px; background: transparent; border: none; }
+        .add-desc-line-btn:hover { background-color: #eef2ff; }
+        .dynamic-preview-item:hover .add-desc-line-btn { display: inline-block; }
+
+        .dynamic-preview-item { position: relative; border: 1px solid transparent; border-radius: 0.375rem; padding: 0.5rem; margin-bottom: var(--item-spacing); transition: border-color 0.2s, background-color 0.2s, opacity 0.3s; }
+        .dynamic-preview-item:hover { background-color: #fafafa; border-color: #e5e7eb; }
+
+        .delete-block-btn { display: none; position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; background-color: #fee2e2; color: #b91c1c; border: none; border-radius: 50%; cursor: pointer; align-items: center; justify-content: center; z-index: 6; }
+        .dynamic-preview-item:hover .delete-block-btn { display: flex; }
+        .delete-block-btn:hover { background-color: #fecaca; color: #991b1b; }
+        .new-badge { background-color: #ef4444; color: white; font-size: 0.6rem; font-weight: bold; padding: 2px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; }
+        
+        /* Modal Styles */
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 5000; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { background: white; padding: 2rem; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.2s; }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        
+        /* Icon Picker Modal */
+        #icon-picker-modal .modal-content { max-width: 700px; }
+        #icon-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 0.5rem; max-height: 60vh; overflow-y: auto; }
+        #icon-picker-grid i { font-size: 1.5rem; padding: 0.75rem; border-radius: 0.25rem; cursor: pointer; text-align: center; transition: background-color 0.2s, color 0.2s; }
+        #icon-picker-grid i:hover { background-color: #eef2ff; color: #4f46e5; }
+        
+        /* In-Preview AI Buttons */
+        .section-ai-actions { margin-left: auto; display: flex; gap: 0.5rem; opacity: 0; transition: opacity 0.2s; }
+        .cv-module:hover .section-ai-actions { opacity: 1; }
+        .ai-action-btn { background: #e0e7ff; color: #4338ca; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; }
+        .ai-action-btn:hover { background: #c7d2fe; }
+
+        /* Styles for hiding sections */
+        .cv-module.section-hidden > *:not(h2) {
+            display: none;
+        }
+        .cv-module.section-hidden > h2 {
+            opacity: 0.5;
+        }
+
+        /* For column resizing */
+        .column-resizer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 10px; /* Wider grab area */
+            cursor: col-resize;
+            transform: translateX(-50%);
+            z-index: 20; /* High z-index */
+        }
+        .column-resizer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 4px; /* Centered 2px line in a 10px div */
+            width: 2px;
+            background-color: #d1d5db;
+            transition: background-color 0.2s ease;
+        }
+        .column-resizer:hover::after,
+        body.is-resizing .column-resizer::after {
+            background-color: #3b82f6;
+        }
+        body.is-resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+
+        /* Presentation Mode & Print Styles */
+        body.presentation-mode .cv-column {
+            border-color: transparent;
+        }
+        body.presentation-mode .column-resizer,
+        body.presentation-mode .drag-handle,
+        body.presentation-mode #ai-summarize-btn,
+        body.presentation-mode .remove-page-btn,
+        body.presentation-mode #add-page-btn-wrapper,
+        body.presentation-mode .section-ai-actions,
+        body.presentation-mode .delete-block-btn,
+        body.presentation-mode .delete-line-btn,
+        body.presentation-mode .insert-line-wrapper {
+            display: none !important;
+        }
+        /* NEW: Completely hide the module in presentation mode if hidden */
+        body.presentation-mode .cv-module.section-hidden {
+            display: none !important;
+        }
+
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .column-resizer,
+            .drag-handle {
+                display: none !important;
+            }
+            .cv-column {
+                border-color: transparent !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .cv-module.section-hidden {
+                display: none !important;
+            }
+            .a4-page {
+                box-shadow: none !important;
+                margin: 0;
+                overflow: visible;
+                height: auto;
+                break-inside: avoid-page;
+            }
+            #cv-preview-wrapper {
+                gap: 0;
+            }
+        }
+
+    </style>
+</head>
+<body class="bg-gray-200 font-sans">
+
+    <!-- OVERLAYS AND MODALS -->
+    <div id="loader-overlay" class="hidden fixed inset-0 bg-white bg-opacity-75 flex-col items-center justify-center z-[9999]">
+        <div class="h-16 w-16 rounded-full border-4 border-gray-200 border-t-blue-600 animate-spin"></div>
+        <p id="loader-text" class="mt-4 text-gray-600 font-medium">Chargement...</p>
+    </div>
+
+    <div id="notification"></div>
+    <button id="ai-summarize-btn" title="Synthèse IA des expériences (5 lignes max)" class="no-print"><i class="fas fa-compress-arrows-alt"></i></button>
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <!-- CONTROLS PANEL -->
+        <div id="controls" class="w-full lg:w-1/3 xl:w-1/4 p-6 bg-white shadow-2xl overflow-y-auto flex flex-col no-print">
+            <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                <div class="flex items-center gap-3"><i class="fas fa-magic-wand-sparkles text-3xl text-blue-600"></i><h1 class="text-2xl font-bold text-gray-800">Créateur de CV</h1></div>
+                <div class="flex items-center gap-2">
+                    <!-- Save status removed -->
+                    <button id="undo-btn" class="history-btn text-xl text-gray-600 hover:text-gray-900 disabled:text-gray-300" title="Annuler (Ctrl+Z)"><i class="fas fa-undo"></i></button>
+                    <button id="redo-btn" class="history-btn text-xl text-gray-600 hover:text-gray-900 disabled:text-gray-300" title="Rétablir (Ctrl+Y)"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+            
+            <!-- NEW: Progress Bar -->
+            <div class="mb-4 flex-shrink-0">
+                <label class="text-sm font-medium text-gray-600">Progression</label>
+                <div id="progress-bar-container" class="w-full bg-gray-200 rounded-full h-2.5 mt-1">
+                    <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-xs text-right text-gray-500 mt-1">0/X sections complétées</p>
+            </div>
+
+            <!-- Actions Rapides -->
+            <div class="space-y-2 mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200 flex-shrink-0">
+                 <div class="grid grid-cols-2 gap-2">
+                      <button id="download-pdf-btn" class="w-full bg-gray-800 text-white py-2 px-4 rounded-md hover:bg-gray-900 flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i> PDF</button>
+                      <button id="share-btn" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 flex items-center justify-center gap-2"><i class="fa-solid fa-share-alt"></i> Partager</button>
+                 </div>
+                 <button id="anonymize-btn" class="w-full bg-slate-500 text-white py-2 px-4 rounded-md hover:bg-slate-600 flex items-center justify-center gap-2"><i class="fa-solid fa-user-secret"></i>Anonymiser le CV</button>
+                 <button id="reset-cv-btn" class="w-full bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 flex items-center justify-center gap-2"><i class="fa-solid fa-file-circle-plus"></i> Nouveau CV</button>
+                 <button id="toggle-overflow-btn" class="w-full bg-yellow-500 text-white py-2 px-4 rounded-md hover:bg-yellow-600 flex items-center justify-center gap-2"><i class="fa-solid fa-ruler-combined"></i> Détection Dépassement</button>
+                 <button id="toggle-presentation-mode-btn" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center justify-center gap-2 mt-2"><i class="fa-solid fa-eye"></i> Mode Présentation</button>
+            </div>
+
+
+            <!-- TABS -->
+            <div id="tab-navigation" class="flex flex-wrap -mb-px border-b border-gray-200">
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-ia"><i class="fa-solid fa-robot mr-1"></i> IA</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-content"><i class="fa-solid fa-file-lines mr-1"></i> Contenu</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-skills"><i class="fa-solid fa-star mr-1"></i> Compétences</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-custom"><i class="fa-solid fa-puzzle-piece mr-1"></i> Sections</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-layout"><i class="fa-solid fa-columns mr-1"></i> Mise en Page</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-styles"><i class="fa-solid fa-palette mr-1"></i> Styles</button>
+                <button class="tab-btn -mb-px py-3 px-4 text-sm font-medium border-b-2 whitespace-nowrap" data-target="#panel-banner"><i class="fa-solid fa-user-tie mr-1"></i> Bannière</button>
+            </div>
+
+            <div id="tab-content" class="py-4 flex-grow overflow-y-auto">
+                <!-- TAB: IA -->
+                <div id="panel-ia" class="tab-panel space-y-4">
+                    <details class="control-group" open>
+                        <summary><span>Analyse IA</span><label class="completion-label"><input type="checkbox" id="completion-ia-analyse" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-2">
+                            <textarea id="ai-input" rows="6" class="w-full p-2 border rounded-md" placeholder="Collez ici une description de poste, un CV brut..."></textarea>
+                            <button id="analyze-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"><i class="fa-solid fa-wand-magic-sparkles"></i> Analyser & Remplir</button>
+                        </div>
+                    </details>
+                    <details class="control-group" open>
+                        <summary><span>Présentation Recruteur</span><label class="completion-label"><input type="checkbox" id="completion-ia-presentation" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-3">
+                            <input type="text" id="qualification-dispo" placeholder="Disponibilité" class="cv-input w-full p-2 border rounded-md">
+                            <input type="text" id="qualification-salaire" placeholder="Prétentions salariales" class="cv-input w-full p-2 border rounded-md">
+                            <input type="text" id="qualification-loc" placeholder="Localisation" class="cv-input w-full p-2 border rounded-md">
+                            <button id="generate-mail-btn" class="mt-2 w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 flex items-center justify-center gap-2"><i class="fas fa-wand-magic-sparkles"></i> Générer le mail</button>
+                            <textarea id="recruiter-mail-content" rows="8" class="cv-input w-full p-2 border rounded-md mt-2" placeholder="Le mail de présentation apparaîtra ici..."></textarea>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- TAB: Contenu -->
+                <div id="panel-content" class="tab-panel hidden space-y-4">
+                    <details class="control-group" open>
+                        <summary><span>Informations Principales</span><label class="completion-label"><input type="checkbox" id="completion-content-infos" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-3">
+                            <input type="text" id="nom" placeholder="Nom" class="cv-input w-full p-2 border rounded-md">
+                            <input type="text" id="prenom" placeholder="Prénom" class="cv-input w-full p-2 border rounded-md">
+                            <input type="text" id="poste" placeholder="Poste recherché" class="cv-input w-full p-2 border rounded-md">
+                            <textarea id="description" placeholder="Description du profil" rows="4" class="cv-input w-full p-2 border rounded-md"></textarea>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Expériences</span><label class="completion-label"><input type="checkbox" id="completion-content-exp" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-2">
+                            <div class="flex justify-end mb-2"><button id="add-experience" class="text-sm text-blue-600 hover:text-blue-800 font-medium"><i class="fas fa-circle-plus"></i> Ajouter un bloc</button></div>
+                            <div id="experience-list" class="space-y-2"></div>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Formations</span><label class="completion-label"><input type="checkbox" id="completion-content-form" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-2">
+                            <div class="flex justify-end mb-2"><button id="add-formation" class="text-sm text-blue-600 hover:text-blue-800 font-medium"><i class="fas fa-circle-plus"></i> Ajouter un bloc</button></div>
+                            <div id="formation-list" class="space-y-2"></div>
+                        </div>
+                    </details>
+                </div>
+                
+                <!-- TAB: Compétences -->
+                <div id="panel-skills" class="tab-panel hidden space-y-4">
+                     <details class="control-group" open>
+                        <summary><span>Compétences</span><label class="completion-label"><input type="checkbox" id="completion-skills" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-3">
+                            <p class="text-sm font-medium">Style de Présentation</p>
+                            <div class="flex gap-2">
+                                <button data-skill-style="tags" class="skill-style-btn flex-1 bg-gray-200 p-2 rounded-md text-sm active">Tags</button>
+                                <button data-skill-style="levels" class="skill-style-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">Niveaux</button>
+                                <button data-skill-style="simple" class="skill-style-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">Simple</button>
+                            </div>
+                            
+                            <div id="skills-text-controls">
+                                <div class="flex justify-between items-center"><label for="competences" class="font-medium">Liste des compétences</label><div class="flex gap-2"><button id="ai-limit-skills-btn" class="text-blue-600 hover:text-blue-800" title="Limiter à 10 compétences par l'IA"><i class="fas fa-filter"></i> 10</button><button id="ai-synthesize-skills-btn" class="text-blue-600 hover:text-blue-800" title="Synthétiser et ranger les compétences par l'IA"><i class="fas fa-brain"></i></button></div></div>
+                                <textarea id="competences" placeholder="Compétences (séparées par des virgules)..." rows="4" class="cv-input w-full p-2 border rounded-md"></textarea>
+                            </div>
+
+                            <div id="skills-level-controls" class="hidden space-y-3">
+                                <p class="text-sm font-medium">Style de Jauge</p>
+                                <div class="grid grid-cols-5 gap-2 text-center">
+                                    <button data-gauge-style="bar" class="gauge-style-btn bg-gray-200 p-2 rounded-md text-sm active" title="Barre"><i class="fas fa-bars"></i></button>
+                                    <button data-gauge-style="dots" class="gauge-style-btn bg-gray-200 p-2 rounded-md text-sm" title="Points"><i class="fas fa-circle"></i></button>
+                                    <button data-gauge-style="stars" class="gauge-style-btn bg-gray-200 p-2 rounded-md text-sm" title="Étoiles"><i class="fas fa-star"></i></button>
+                                    <button data-gauge-style="squares" class="gauge-style-btn bg-gray-200 p-2 rounded-md text-sm" title="Carrés"><i class="fas fa-square"></i></button>
+                                    <button data-gauge-style="number" class="gauge-style-btn bg-gray-200 p-2 rounded-md text-sm font-bold" title="Chiffres">⅗</button>
+                                </div>
+                                <div id="skills-level-list" class="space-y-2 border-t pt-3"></div>
+                                <button id="add-skill-level-btn" class="w-full bg-blue-100 text-blue-800 py-2 px-4 rounded-md hover:bg-blue-200 flex items-center justify-center gap-2 text-sm"><i class="fas fa-plus-circle"></i> Ajouter une compétence</button>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- TAB: Sections Perso -->
+                <div id="panel-custom" class="tab-panel hidden space-y-4">
+                    <details class="control-group" open>
+                        <summary><span>Sections Personnalisées</span><label class="completion-label"><input type="checkbox" id="completion-custom" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-3">
+                            <div class="space-y-2">
+                                <label class="text-sm font-medium">Ajouter une nouvelle section</label>
+                                <select id="section-suggestion-select" class="w-full p-2 border rounded-md text-sm">
+                                    <option value="">-- Choisir une suggestion --</option>
+                                    <option value="Langues 🌐">Langues 🌐</option>
+                                    <option value="Centres d'intérêt 🎨">Centres d'intérêt 🎨</option>
+                                    <option value="Certifications 📜">Certifications 📜</option>
+                                    <option value="Projets Personnels 💡">Projets Personnels 💡</option>
+                                    <option value="Bénévolat ❤️">Bénévolat ❤️</option>
+                                </select>
+                                <div class="flex gap-2">
+                                    <input type="text" id="new-section-title-input" class="flex-grow p-2 border rounded-md text-sm" placeholder="Ou tapez un titre personnalisé...">
+                                    <button id="add-section-btn" class="bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600"><i class="fas fa-plus"></i></button>
+                                </div>
+                            </div>
+                            <div id="custom-sections-list" class="space-y-2 mt-2 border-t pt-2"></div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- TAB: Mise en Page -->
+                <div id="panel-layout" class="tab-panel hidden space-y-4">
+                    <details class="control-group" open>
+                        <summary><span>Mise en Colonnes</span><label class="completion-label"><input type="checkbox" id="completion-layout-cols" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content">
+                            <div class="flex gap-2"><button data-layout="layout-1-col" class="layout-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">1</button><button data-layout="layout-2-col-33-67" class="layout-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">33/67</button><button data-layout="layout-2-col-50-50" class="layout-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">50/50</button><button data-layout="layout-2-col-67-33" class="layout-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">67/33</button></div>
+                        </div>
+                    </details>
+                    <details class="control-group" open>
+                        <summary><span>Espacements & Tailles</span><label class="completion-label"><input type="checkbox" id="completion-layout-spacing" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-4">
+                            <div><label for="page-margin" class="block text-sm font-medium text-gray-700">Marge Page: <span id="page-margin-value">2</span>cm</label><input type="range" id="page-margin" min="0.5" max="3" step="0.1" value="2" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div>
+                            <div><label for="module-spacing" class="block text-sm font-medium text-gray-700">Espace Blocs: <span id="module-spacing-value">1.5</span>rem</label><input type="range" id="module-spacing" min="0" max="4" step="0.1" value="1.5" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div>
+                            <div><label for="item-spacing" class="block text-sm font-medium text-gray-700">Espace Éléments: <span id="item-spacing-value">0.5</span>rem</label><input type="range" id="item-spacing" min="0" max="2" step="0.1" value="0.5" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div>
+                            <div><label for="font-size-h1" class="block text-sm font-medium text-gray-700">Taille Titre Principal: <span id="font-size-h1-value">40</span>pt</label><input type="range" id="font-size-h1" min="20" max="50" step="1" value="40" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><div><label for="font-size-h2" class="block text-sm font-medium text-gray-700">Taille Titres Section: <span id="font-size-h2-value">21</span>pt</label><input type="range" id="font-size-h2" min="14" max="30" step="1" value="21" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><div><label for="font-size-p" class="block text-sm font-medium text-gray-700">Taille Paragraphe: <span id="font-size-p-value">10</span>pt</label><input type="range" id="font-size-p" min="8" max="14" step="0.5" value="10" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><div><label for="font-size-banner" class="block text-sm font-medium text-gray-700">Taille Bannière: <span id="font-size-banner-value">9</span>pt</label><input type="range" id="font-size-banner" min="7" max="12" step="0.5" value="9" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><div><label for="line-height" class="block text-sm font-medium text-gray-700">Interligne: <span id="line-height-value">1.6</span></label><input type="range" id="line-height" min="0.8" max="2.5" step="0.1" value="1.6" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><div><label for="paragraph-spacing" class="block text-sm font-medium text-gray-700">Espace Paragraphe: <span id="paragraph-spacing-value">0.5</span>rem</label><input type="range" id="paragraph-spacing" min="0" max="2" step="0.1" value="0.5" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div>
+                        </div>
+                    </details>
+                </div>
+                
+                <!-- TAB: Styles Globaux -->
+                <div id="panel-styles" class="tab-panel hidden space-y-4">
+                     <details class="control-group" open>
+                        <summary><span>Thèmes</span><label class="completion-label"><input type="checkbox" id="completion-styles-themes" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content">
+                            <div id="theme-buttons" class="grid grid-cols-3 gap-2">
+                                <button data-theme="professional" class="theme-btn bg-gray-200 p-2 rounded-md text-sm">Pro</button>
+                                <button data-theme="creative" class="theme-btn bg-gray-200 p-2 rounded-md text-sm">Créatif</button>
+                                <button data-theme="modern" class="theme-btn bg-gray-200 p-2 rounded-md text-sm">Moderne</button>
+                            </div>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Couleurs</span><label class="completion-label"><input type="checkbox" id="completion-styles-colors" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content">
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="primary-color-picker" class="block text-sm font-medium text-gray-700">Principale</label>
+                                    <input type="color" id="primary-color-picker" value="#2563eb" class="cv-input w-full h-10 p-1 border rounded-md">
+                                </div>
+                                <div>
+                                    <label for="secondary-color-picker" class="block text-sm font-medium text-gray-700">Secondaire</label>
+                                    <div class="flex items-center">
+                                        <input type="color" id="secondary-color-picker" value="#334155" class="cv-input w-full h-10 p-1 border rounded-md">
+                                        <button id="ai-color-btn" title="Suggestion IA" class="ml-2 text-blue-600 hover:text-blue-800"><i class="fas fa-wand-magic-sparkles"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-span-2">
+                                    <label for="body-text-color-picker" class="block text-sm font-medium text-gray-700">Texte du corps</label>
+                                    <input type="color" id="body-text-color-picker" value="#334155" class="cv-input w-full h-10 p-1 border rounded-md">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Polices</span><label class="completion-label"><input type="checkbox" id="completion-styles-fonts" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-4">
+                            <div>
+                                <label for="font-family-h1-select" class="block text-sm font-medium text-gray-700">Titre Principal (H1)</label>
+                                <select id="font-family-h1-select" class="cv-input w-full p-2 border rounded-md"></select>
+                            </div>
+                            <div>
+                                <label for="font-family-h2-select" class="block text-sm font-medium text-gray-700">Titres de Section (H2)</label>
+                                <select id="font-family-h2-select" class="cv-input w-full p-2 border rounded-md"></select>
+                            </div>
+                            <div>
+                                <label for="font-family-body-select" class="block text-sm font-medium text-gray-700">Corps de Texte</label>
+                                <select id="font-family-body-select" class="cv-input w-full p-2 border rounded-md"></select>
+                            </div>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Style des Titres de Section</span><label class="completion-label"><input type="checkbox" id="completion-styles-titles" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button data-title-style="style-underline" class="section-title-style-btn bg-gray-200 p-2 rounded-md text-sm active">Souligné</button>
+                                <button data-title-style="style-side-line" class="section-title-style-btn bg-gray-200 p-2 rounded-md text-sm">Ligne Côté</button>
+                                <button data-title-style="style-background" class="section-title-style-btn bg-gray-200 p-2 rounded-md text-sm">Fond</button>
+                                <button data-title-style="style-boxed" class="section-title-style-btn bg-gray-200 p-2 rounded-md text-sm">Encadré</button>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- TAB: Bannière -->
+                <div id="panel-banner" class="tab-panel hidden space-y-4">
+                     <details class="control-group" open>
+                        <summary><span>Bannière Recruteur</span><label class="completion-label"><input type="checkbox" id="completion-banner-main" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-3">
+                            <div class="flex justify-between items-center">
+                                <h3 class="font-semibold text-gray-700">Bannière Recruteur</h3>
+                                <button id="reset-recruiter-btn" class="text-sm text-gray-500 hover:text-red-600" title="Réinitialiser les informations recruteur"><i class="fas fa-undo"></i></button>
+                            </div>
+                            <div id="banner-fix-controls"><button id="fix-banner-top-btn" class="w-full bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2"><i class="fas fa-arrow-up"></i>Fixer en haut</button><button id="fix-banner-bottom-btn" class="w-full bg-teal-600 text-white py-2 px-4 rounded-md hover:bg-teal-700 flex items-center justify-center gap-2 mt-2"><i class="fas fa-arrow-down"></i>Fixer en bas</button></div><button id="modular-banner-btn" class="cv-input w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 flex items-center justify-center gap-2 hidden"><i class="fas fa-arrows-up-down-left-right"></i>Rendre modulaire</button><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="toggle-banner-checkbox" class="cv-input">Afficher la bannière</label><label for="banner-style-select" class="text-sm font-medium">Style de Bannière</label><select id="banner-style-select" class="cv-input w-full p-2 border rounded-md"><option value="banner-style-modern">Moderne</option><option value="banner-style-elegant">Élégant</option><option value="banner-style-discret">Discret</option><option value="banner-style-carte">Carte</option><option value="banner-style-degrade">Dégradé</option><option value="banner-style-premium">Premium</option><option value="banner-style-minimal">Minimal</option><option value="banner-style-encadre">Encadré</option><option value="banner-style-ligne-haute">Ligne Haute</option></select><p class="text-sm font-medium">Alignement</p><div class="flex gap-2"><button data-banner-align="left" class="banner-align-btn flex-1 bg-gray-200 p-2 rounded-md text-sm"><i class="fas fa-align-left"></i></button><button data-banner-align="center" class="banner-align-btn flex-1 bg-gray-200 p-2 rounded-md text-sm"><i class="fas fa-align-center"></i></button><button data-banner-align="right" class="banner-align-btn flex-1 bg-gray-200 p-2 rounded-md text-sm"><i class="fas fa-align-right"></i></button><button id="banner-invert-btn" class="p-2 bg-gray-200 rounded-md text-sm" title="Inverser Logo/Texte"><i class="fas fa-right-left"></i></button></div><p class="text-sm font-medium">Taille Logo</p><div class="flex gap-2"><button data-logo-size="sm" class="logo-size-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">P</button><button data-logo-size="md" class="logo-size-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">M</button><button data-logo-size="lg" class="logo-size-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">G</button><button data-logo-size="xl" class="logo-size-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">XL</button><button data-logo-size="xxl" class="logo-size-btn flex-1 bg-gray-200 p-2 rounded-md text-sm">XXL</button></div><div><label for="banner-element-spacing" class="block text-sm font-medium text-gray-700">Espace Bannière: <span id="banner-element-spacing-value">1</span>rem</label><input type="range" id="banner-element-spacing" min="0.5" max="4" step="0.1" value="1" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"></div><input type="text" id="banner-nom" placeholder="Votre Nom & Prénom" class="banner-input w-full p-2 border rounded-md"><input type="text" id="banner-poste" placeholder="Votre Poste" class="banner-input w-full p-2 border rounded-md"><input type="email" id="banner-email" placeholder="Email" class="banner-input w-full p-2 border rounded-md"><input type="tel" id="banner-tel" placeholder="Téléphone" class="banner-input w-full p-2 border rounded-md"><div><label for="banner-image" class="block text-sm font-medium text-gray-700">Photo/Logo</label><input type="file" id="banner-image" accept="image/*" class="banner-input mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"></div>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Image de Fond</span><label class="completion-label"><input type="checkbox" id="completion-banner-bg" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-4">
+                            <div>
+                                <label for="banner-bg-image" class="block text-sm font-medium text-gray-700">Télécharger une image</label>
+                                <input type="file" id="banner-bg-image" accept="image/*" class="banner-input mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            </div>
+                            <div>
+                                <label for="banner-bg-opacity" class="block text-sm font-medium text-gray-700">Opacité: <span id="banner-bg-opacity-value">1</span></label>
+                                <input type="range" id="banner-bg-opacity" min="0" max="1" step="0.05" value="1" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+                            </div>
+                            <div>
+                                <label for="banner-bg-blur" class="block text-sm font-medium text-gray-700">Flou: <span id="banner-bg-blur-value">0</span>px</label>
+                                <input type="range" id="banner-bg-blur" min="0" max="20" step="1" value="0" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+                            </div>
+                            <label class="flex items-center gap-2 text-sm"><input type="checkbox" id="banner-bg-grayscale" class="cv-input">Image en noir et blanc</label>
+                            <button id="remove-banner-bg-btn" class="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 flex items-center justify-center gap-2"><i class="fas fa-trash"></i> Supprimer l'image de fond</button>
+                        </div>
+                    </details>
+                     <details class="control-group" open>
+                        <summary><span>Style du Texte</span><label class="completion-label"><input type="checkbox" id="completion-banner-text" class="completion-checkbox"><span>Fait ✅</span></label></summary>
+                        <div class="control-group-content space-y-4">
+                            <button id="randomize-banner-style-btn" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 flex items-center justify-center gap-2"><i class="fas fa-dice"></i> Style Aléatoire</button><div class="border-t pt-4 mt-4"><h4 class="font-semibold text-sm mb-2">Nom & Prénom</h4><label class="text-xs">Police</label><select id="banner-nom-font" class="cv-input w-full p-1 border text-sm rounded-md"><option value="'Montserrat', sans-serif">Montserrat</option><option value="'Playfair Display', serif">Playfair Display</option><option value="'Oswald', sans-serif">Oswald</option><option value="'Cormorant Garamond', serif">Cormorant Garamond</option><option value="'Merriweather', serif">Merriweather</option><option value="'Lato', sans-serif">Lato</option></select><label class="text-xs mt-2 block">Taille: <span id="banner-nom-size-value">24</span>pt</label><input type="range" id="banner-nom-size" min="14" max="40" step="1" value="24" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"><div class="flex items-center gap-2 mt-2"><label class="text-xs">Couleur:</label><input type="color" id="banner-nom-color" value="#334155" class="cv-input w-full h-8 p-1 border rounded-md"><button id="banner-nom-bold" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-bold"></i></button><button id="banner-nom-italic" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-italic"></i></button></div></div><div class="border-t pt-4 mt-4"><h4 class="font-semibold text-sm mb-2">Poste</h4><label class="text-xs mt-2 block">Taille: <span id="banner-poste-size-value">12</span>pt</label><input type="range" id="banner-poste-size" min="8" max="20" step="0.5" value="12" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"><div class="flex items-center gap-2 mt-2"><label class="text-xs">Couleur:</label><input type="color" id="banner-poste-color" value="#334155" class="cv-input w-full h-8 p-1 border rounded-md"><button id="banner-poste-bold" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-bold"></i></button><button id="banner-poste-italic" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-italic"></i></button></div></div><div class="border-t pt-4 mt-4"><h4 class="font-semibold text-sm mb-2">Coordonnées</h4><label class="text-xs mt-2 block">Taille: <span id="banner-contact-size-value">9</span>pt</label><input type="range" id="banner-contact-size" min="7" max="14" step="0.5" value="9" class="cv-input w-full h-2 bg-gray-200 rounded-lg cursor-pointer"><div class="flex items-center gap-2 mt-2"><label class="text-xs">Couleur:</label><input type="color" id="banner-contact-color" value="#334155" class="cv-input w-full h-8 p-1 border rounded-md"><button id="banner-contact-bold" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-bold"></i></button><button id="banner-contact-italic" class="style-toggle-btn p-1 px-2 rounded-md bg-gray-200 text-sm"><i class="fas fa-italic"></i></button></div></div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- PREVIEW PANEL -->
+        <div class="w-full lg:w-2/3 xl:w-3/4 p-8 bg-gray-200 flex justify-center items-start overflow-auto" id="preview-area">
+            <div id="cv-preview-wrapper">
+                <div class="a4-page-container">
+                    <div id="page-1" class="a4-page">
+                        <div id="fixed-banner-top"></div>
+                        <div class="cv-body-container layout-1-col">
+                            <div id="cv-col-1-1" class="cv-column">
+                                <div id="banner-module" class="cv-module">
+                                    <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <div id="recruiter-banner" class="banner-align-left">
+                                        <img id="banner-bg-img-preview" src="" alt="Banner background" class="absolute top-0 left-0 w-full h-full object-cover z-0 transition-all duration-300">
+                                        <div class="banner-content-wrapper">
+                                            <img id="banner-img-preview" class="logo-md" src="https://placehold.co/100x100/EFEFEF/AAAAAA&text=Photo" alt="Photo recruteur" onerror="this.onerror=null; this.src='https://placehold.co/100x100/EFEFEF/AAAAAA&text=Photo';">
+                                            <div class="banner-content">
+                                                <p id="banner-nom-preview" class="item-title" contenteditable="true"></p>
+                                                <p id="banner-poste-preview" contenteditable="true"></p>
+                                                <p id="banner-contact-preview"><span id="banner-email-preview" contenteditable="true"></span> | <span id="banner-tel-preview" contenteditable="true"></span></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="header-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><div class="cv-header text-center"><div class="editable-wrapper"><h1 id="cv-nom-prenom-preview" contenteditable="true">Prénom NOM</h1><span class="delete-line-btn"><i class="fas fa-times"></i></span></div><div class="editable-wrapper"><p id="cv-poste-preview" contenteditable="true">Poste Recherché</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div></div></div>
+                                <div id="qualification-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><div id="qualification-preview" class="flex justify-center gap-4 text-center text-sm p-2 bg-slate-50 rounded-md"></div></div>
+                                <div id="description-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><h2 class="section-title style-underline" data-section-id="description"><i class="fas fa-user-circle section-icon"></i><span contenteditable="true">Profil</span><div class="section-ai-actions"><button class="ai-action-btn toggle-visibility-btn" title="Masquer/Afficher la section"><i class="fas fa-eye"></i></button><button class="ai-action-btn" data-action="rewrite-profile" title="Réécrire le profil avec l'IA"><i class="fas fa-magic-wand-sparkles"></i></button></div></h2><div id="cv-description-preview"></div></div>
+                                <div id="experience-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><h2 class="section-title style-underline" data-section-id="experience"><i class="fas fa-briefcase section-icon"></i><span contenteditable="true">Expérience</span><div class="section-ai-actions"><button class="ai-action-btn toggle-visibility-btn" title="Masquer/Afficher la section"><i class="fas fa-eye"></i></button><button class="ai-action-btn" data-action="summarize-experience" title="Synthétiser les expériences avec l'IA (5 lignes max)"><i class="fas fa-magic-wand-sparkles"></i></button></div></h2><div id="cv-experience-preview"></div></div>
+                                <div id="formation-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><h2 class="section-title style-underline" data-section-id="formation"><i class="fas fa-graduation-cap section-icon"></i><span contenteditable="true">Formation</span><div class="section-ai-actions"><button class="ai-action-btn toggle-visibility-btn" title="Masquer/Afficher la section"><i class="fas fa-eye"></i></button><button class="ai-action-btn" data-action="rewrite-formation" title="Améliorer les formations avec l'IA"><i class="fas fa-magic-wand-sparkles"></i></button></div></h2><div id="cv-formation-preview"></div></div>
+                                <div id="competences-module" class="cv-module"><div class="drag-handle"><i class="fas fa-grip-vertical"></i></div><h2 class="section-title style-underline" data-section-id="competences"><i class="fas fa-star section-icon"></i><span contenteditable="true">Compétences</span><div class="section-ai-actions"><button class="ai-action-btn toggle-visibility-btn" title="Masquer/Afficher la section"><i class="fas fa-eye"></i></button><button class="ai-action-btn" data-action="rewrite-skills" title="Améliorer les compétences avec l'IA"><i class="fas fa-magic-wand-sparkles"></i></button></div></h2><div id="cv-competences-preview" data-style="tags"></div></div>
+                            </div>
+                            <div id="cv-col-1-2" class="cv-column"></div>
+                        </div>
+                        <div id="fixed-banner-bottom"></div>
+                    </div>
+                     <button class="remove-page-btn no-print"><i class="fas fa-trash-can"></i></button>
+                </div>
+                 <div id="add-page-btn-wrapper" class="no-print">
+                     <button id="add-page-btn" title="Ajouter une page"><i class="fas fa-plus"></i></button>
+                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODALS -->
+    <div id="share-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4">Partager le CV</h2>
+            <p class="text-sm text-gray-600 mb-2">Copiez ce lien unique pour partager une version en lecture seule de ce CV.</p>
+            <div class="flex items-center border rounded-md p-2 bg-gray-50">
+                <input type="text" id="share-link-input" readonly class="flex-grow bg-transparent outline-none text-sm">
+                <button id="copy-share-link-btn" class="ml-2 px-3 py-1 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600">Copier</button>
+            </div>
+            <div class="text-right mt-4">
+                 <button id="close-share-modal" class="px-4 py-2 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Fermer</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="icon-picker-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Choisir une icône</h2>
+                <button id="close-icon-picker-modal" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div class="mb-4">
+                <input type="text" id="icon-search-input" placeholder="Rechercher une icône..." class="w-full p-2 border rounded-md">
+            </div>
+            <div id="icon-picker-grid"></div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="confirm-modal-title" class="text-xl font-bold mb-4">Confirmation</h2>
+            <p id="confirm-modal-text" class="text-gray-600 mb-6">Êtes-vous sûr ?</p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-modal-cancel-btn" class="px-4 py-2 bg-gray-200 text-sm rounded-md hover:bg-gray-300">Annuler</button>
+                <button id="confirm-modal-ok-btn" class="px-4 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // This script is now self-contained and does not use Firebase for saving.
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- GLOBAL SELECTORS (STATIC) ---
+            const controls = {
+                aiInput: document.getElementById('ai-input'), analyzeBtn: document.getElementById('analyze-btn'), loader: document.getElementById('loader-overlay'), loaderText: document.getElementById('loader-text'),
+                nom: document.getElementById('nom'), prenom: document.getElementById('prenom'), poste: document.getElementById('poste'),
+                description: document.getElementById('description'), competences: document.getElementById('competences'), aiSynthesizeSkillsBtn: document.getElementById('ai-synthesize-skills-btn'),
+                experienceList: document.getElementById('experience-list'), addExperienceBtn: document.getElementById('add-experience'),
+                formationList: document.getElementById('formation-list'), addFormationBtn: document.getElementById('add-formation'),
+                toggleBanner: document.getElementById('toggle-banner-checkbox'), bannerNom: document.getElementById('banner-nom'), bannerPoste: document.getElementById('banner-poste'), bannerEmail: document.getElementById('banner-email'), bannerTel: document.getElementById('banner-tel'), bannerImage: document.getElementById('banner-image'),
+                bannerStyleSelect: document.getElementById('banner-style-select'), bannerInvertBtn: document.getElementById('banner-invert-btn'),
+                fixBannerTopBtn: document.getElementById('fix-banner-top-btn'), fixBannerBottomBtn: document.getElementById('fix-banner-bottom-btn'), modularBannerBtn: document.getElementById('modular-banner-btn'),
+                qualificationDispo: document.getElementById('qualification-dispo'), qualificationSalaire: document.getElementById('qualification-salaire'), qualificationLoc: document.getElementById('qualification-loc'),
+                generateMailBtn: document.getElementById('generate-mail-btn'), recruiterMailContent: document.getElementById('recruiter-mail-content'),
+                anonymizeBtn: document.getElementById('anonymize-btn'), downloadPdfBtn: document.getElementById('download-pdf-btn'),
+                resetCvBtn: document.getElementById('reset-cv-btn'),
+                togglePresentationModeBtn: document.getElementById('toggle-presentation-mode-btn'),
+                toggleOverflowBtn: document.getElementById('toggle-overflow-btn'),
+                aiSummarizeBtn: document.getElementById('ai-summarize-btn'),
+                resetRecruiterBtn: document.getElementById('reset-recruiter-btn'),
+                aiLimitSkillsBtn: document.getElementById('ai-limit-skills-btn'),
+                pageMargin: document.getElementById('page-margin'), pageMarginValue: document.getElementById('page-margin-value'),
+                moduleSpacing: document.getElementById('module-spacing'), moduleSpacingValue: document.getElementById('module-spacing-value'),
+                itemSpacing: document.getElementById('item-spacing'), itemSpacingValue: document.getElementById('item-spacing-value'),
+                fontSizeH1: document.getElementById('font-size-h1'), fontSizeH1Value: document.getElementById('font-size-h1-value'),
+                fontSizeH2: document.getElementById('font-size-h2'), fontSizeH2Value: document.getElementById('font-size-h2-value'),
+                fontSizeP: document.getElementById('font-size-p'), fontSizePValue: document.getElementById('font-size-p-value'),
+                fontSizeBanner: document.getElementById('font-size-banner'), fontSizeBannerValue: document.getElementById('font-size-banner-value'),
+                bannerElementSpacing: document.getElementById('banner-element-spacing'), bannerElementSpacingValue: document.getElementById('banner-element-spacing-value'),
+                lineHeight: document.getElementById('line-height'), lineHeightValue: document.getElementById('line-height-value'),
+                paragraphSpacing: document.getElementById('paragraph-spacing'), paragraphSpacingValue: document.getElementById('paragraph-spacing-value'),
+                randomizeBannerStyleBtn: document.getElementById('randomize-banner-style-btn'),
+                bannerNomFont: document.getElementById('banner-nom-font'), bannerNomSize: document.getElementById('banner-nom-size'), bannerNomSizeValue: document.getElementById('banner-nom-size-value'), bannerNomColor: document.getElementById('banner-nom-color'), bannerNomBold: document.getElementById('banner-nom-bold'), bannerNomItalic: document.getElementById('banner-nom-italic'),
+                bannerPosteSize: document.getElementById('banner-poste-size'), bannerPosteSizeValue: document.getElementById('banner-poste-size-value'), bannerPosteColor: document.getElementById('banner-poste-color'), bannerPosteBold: document.getElementById('banner-poste-bold'), bannerPosteItalic: document.getElementById('banner-poste-italic'),
+                bannerContactSize: document.getElementById('banner-contact-size'), bannerContactSizeValue: document.getElementById('banner-contact-size-value'), bannerContactColor: document.getElementById('banner-contact-color'), bannerContactBold: document.getElementById('banner-contact-bold'), bannerContactItalic: document.getElementById('banner-contact-italic'),
+                undoBtn: document.getElementById('undo-btn'), redoBtn: document.getElementById('redo-btn'),
+                addSectionBtn: document.getElementById('add-section-btn'), customSectionsList: document.getElementById('custom-sections-list'), sectionSuggestionSelect: document.getElementById('section-suggestion-select'), newSectionTitleInput: document.getElementById('new-section-title-input'),
+                primaryColorPicker: document.getElementById('primary-color-picker'),
+                secondaryColorPicker: document.getElementById('secondary-color-picker'),
+                aiColorBtn: document.getElementById('ai-color-btn'),
+                bodyTextColorPicker: document.getElementById('body-text-color-picker'),
+                fontFamilyH1Select: document.getElementById('font-family-h1-select'),
+                fontFamilyH2Select: document.getElementById('font-family-h2-select'),
+                fontFamilyBodySelect: document.getElementById('font-family-body-select'),
+                shareBtn: document.getElementById('share-btn'), shareModal: document.getElementById('share-modal'), closeShareModal: document.getElementById('close-share-modal'), shareLinkInput: document.getElementById('share-link-input'), copyShareLinkBtn: document.getElementById('copy-share-link-btn'),
+                iconPickerModal: document.getElementById('icon-picker-modal'), closeIconPickerModal: document.getElementById('close-icon-picker-modal'), iconPickerGrid: document.getElementById('icon-picker-grid'), iconSearchInput: document.getElementById('icon-search-input'),
+                addPageBtn: document.getElementById('add-page-btn'),
+                bannerBgImage: document.getElementById('banner-bg-image'),
+                bannerBgOpacity: document.getElementById('banner-bg-opacity'),
+                bannerBgOpacityValue: document.getElementById('banner-bg-opacity-value'),
+                bannerBgBlur: document.getElementById('banner-bg-blur'),
+                bannerBgBlurValue: document.getElementById('banner-bg-blur-value'),
+                bannerBgGrayscale: document.getElementById('banner-bg-grayscale'),
+                removeBannerBgBtn: document.getElementById('remove-banner-bg-btn'),
+                skillsTextControls: document.getElementById('skills-text-controls'),
+                skillsLevelControls: document.getElementById('skills-level-controls'),
+                skillsLevelList: document.getElementById('skills-level-list'),
+                addSkillLevelBtn: document.getElementById('add-skill-level-btn'),
+                confirmModal: {
+                    overlay: document.getElementById('confirm-modal'),
+                    title: document.getElementById('confirm-modal-title'),
+                    text: document.getElementById('confirm-modal-text'),
+                    okBtn: document.getElementById('confirm-modal-ok-btn'),
+                    cancelBtn: document.getElementById('confirm-modal-cancel-btn'),
+                }
+            };
+
+            // --- DYNAMIC SELECTORS ---
+            let preview = {};
+            function reinitializePreviewSelectors() {
+                preview.previewWrapper = document.getElementById('cv-preview-wrapper');
+                preview.cvNomPrenom = document.getElementById('cv-nom-prenom-preview');
+                preview.cvPoste = document.getElementById('cv-poste-preview');
+                preview.cvDescription = document.getElementById('cv-description-preview');
+                preview.cvFormation = document.getElementById('cv-formation-preview');
+                preview.cvCompetences = document.getElementById('cv-competences-preview');
+                preview.cvExperience = document.getElementById('cv-experience-preview');
+                preview.bannerModule = document.getElementById('banner-module');
+                preview.banner = document.getElementById('recruiter-banner');
+                preview.bannerImg = document.getElementById('banner-img-preview');
+                preview.bannerNom = document.getElementById('banner-nom-preview');
+                preview.bannerPoste = document.getElementById('banner-poste-preview');
+                preview.bannerContact = document.getElementById('banner-contact-preview');
+                preview.bannerEmail = document.getElementById('banner-email-preview');
+                preview.bannerTel = document.getElementById('banner-tel-preview');
+                preview.qualificationModule = document.getElementById('qualification-module');
+                preview.qualificationPreview = document.getElementById('qualification-preview');
+                preview.fixedBannerTop = document.getElementById('fixed-banner-top');
+                preview.fixedBannerBottom = document.getElementById('fixed-banner-bottom');
+                preview.bannerBgImg = document.getElementById('banner-bg-img-preview');
+            }
+            
+            // --- CONFIGURATION OBJECTS ---
+            const sliders = {
+                pageMargin: { el: controls.pageMargin, valueEl: controls.pageMarginValue, property: '--page-margin', unit: 'cm' },
+                moduleSpacing: { el: controls.moduleSpacing, valueEl: controls.moduleSpacingValue, property: '--module-spacing', unit: 'rem' },
+                itemSpacing: { el: controls.itemSpacing, valueEl: controls.itemSpacingValue, property: '--item-spacing', unit: 'rem' },
+                fontSizeH1: { el: controls.fontSizeH1, valueEl: controls.fontSizeH1Value, property: '--font-size-h1', unit: 'pt' },
+                fontSizeH2: { el: controls.fontSizeH2, valueEl: controls.fontSizeH2Value, property: '--font-size-h2', unit: 'pt' },
+                fontSizeP: { el: controls.fontSizeP, valueEl: controls.fontSizePValue, property: '--font-size-p', unit: 'pt' },
+                fontSizeBanner: { el: controls.fontSizeBanner, valueEl: controls.fontSizeBannerValue, property: '--font-size-banner', unit: 'pt' },
+                lineHeight: { el: controls.lineHeight, valueEl: controls.lineHeightValue, property: '--line-height', unit: '' },
+                paragraphSpacing: { el: controls.paragraphSpacing, valueEl: controls.paragraphSpacingValue, property: '--paragraph-spacing', unit: 'rem' },
+                bannerElementSpacing: { el: controls.bannerElementSpacing, valueEl: controls.bannerElementSpacingValue, property: '--banner-element-spacing', unit: 'rem' },
+            };
+
+            const bannerStyleControls = {
+                nomFont: { el: controls.bannerNomFont, event: 'change', stateKey: 'nomFont' },
+                nomSize: { el: controls.bannerNomSize, event: 'input', valueEl: controls.bannerNomSizeValue, stateKey: 'nomSize' },
+                nomColor: { el: controls.bannerNomColor, event: 'input', stateKey: 'nomColor' },
+                nomBold: { el: controls.bannerNomBold, event: 'click', toggle: true, stateKey: 'nomBold' },
+                nomItalic: { el: controls.bannerNomItalic, event: 'click', toggle: true, stateKey: 'nomItalic' },
+                posteSize: { el: controls.bannerPosteSize, event: 'input', valueEl: controls.bannerPosteSizeValue, stateKey: 'posteSize' },
+                posteColor: { el: controls.bannerPosteColor, event: 'input', stateKey: 'posteColor' },
+                posteBold: { el: controls.bannerPosteBold, event: 'click', toggle: true, stateKey: 'posteBold' },
+                posteItalic: { el: controls.bannerPosteItalic, event: 'click', toggle: true, stateKey: 'posteItalic' },
+                contactSize: { el: controls.bannerContactSize, event: 'input', valueEl: controls.bannerContactSizeValue, stateKey: 'contactSize' },
+                contactColor: { el: controls.bannerContactColor, event: 'input', stateKey: 'contactColor' },
+                contactBold: { el: controls.bannerContactBold, event: 'click', toggle: true, stateKey: 'contactBold' },
+                contactItalic: { el: controls.bannerContactItalic, event: 'click', toggle: true, stateKey: 'contactItalic' },
+            };
+
+            const themes = {
+                professional: {
+                    primaryColor: '#2563eb', secondaryColor: '#334155', bodyTextColor: '#334155',
+                    fontH1: "'Montserrat', sans-serif", fontH2: "'Montserrat', sans-serif", fontBody: "'Lato', sans-serif"
+                },
+                creative: {
+                    primaryColor: '#db2777', secondaryColor: '#4f46e5', bodyTextColor: '#44403c',
+                    fontH1: "'Playfair Display', serif", fontH2: "'Oswald', sans-serif", fontBody: "'Nunito Sans', sans-serif"
+                },
+                modern: {
+                    primaryColor: '#16a34a', secondaryColor: '#1f2937', bodyTextColor: '#374151',
+                    fontH1: "'Oswald', sans-serif", fontH2: "'Source Sans Pro', sans-serif", fontBody: "'Source Sans Pro', sans-serif"
+                }
+            };
+            
+            // --- GLOBAL STATE VARIABLES ---
+            let pageCounter = 1;
+            let customSectionCounter = 0;
+            const root = document.documentElement;
+            let isAnonymized = false;
+            let originalData = {};
+            let isRestoringState = false; 
+            let activeIconTarget = null;
+            
+            // --- UI UTILITIES ---
+            function showLoader(text = "Chargement...") {
+                controls.loaderText.textContent = text;
+                controls.loader.classList.remove('hidden');
+                controls.loader.classList.add('flex');
+            }
+
+            function hideLoader() {
+                controls.loader.classList.add('hidden');
+                controls.loader.classList.remove('flex');
+            }
+
+            function showNotification(message, type = 'success', duration = 3000) {
+                const toast = document.createElement('div');
+                const icon = type === 'error' ? 'fa-times-circle text-red-500' : 'fa-check-circle text-green-500';
+                toast.className = 'toast';
+                toast.innerHTML = `<i class="fas ${icon}"></i><span>${message}</span>`;
+                document.getElementById('notification').appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, duration);
+            }
+            
+            function showConfirmModal(title, text) {
+                return new Promise((resolve) => {
+                    controls.confirmModal.title.textContent = title;
+                    controls.confirmModal.text.innerHTML = text;
+                    controls.confirmModal.overlay.classList.add('active');
+
+                    const cleanup = (result) => {
+                        controls.confirmModal.overlay.classList.remove('active');
+                        controls.confirmModal.okBtn.onclick = null;
+                        controls.confirmModal.cancelBtn.onclick = null;
+                        resolve(result);
+                    };
+
+                    controls.confirmModal.okBtn.onclick = () => cleanup(true);
+                    controls.confirmModal.cancelBtn.onclick = () => cleanup(false);
+                });
+            }
+
+
+            // --- HISTORY (UNDO/REDO) SYSTEM ---
+            // History is not saved, so this is a simple implementation
+            function undo() { showNotification("Fonctionnalité non disponible en mode hors ligne.", "error"); }
+            function redo() { showNotification("Fonctionnalité non disponible en mode hors ligne.", "error"); }
+            
+            // --- DRAG & DROP & RESIZE ---
+            let activeResizer = null;
+            let activeContainer = null;
+            let activeCol1 = null;
+            let initialX = 0;
+            let initialCol1Width = 0;
+
+            function initResize(e) {
+                e.preventDefault();
+                activeResizer = e.target;
+                activeContainer = activeResizer.parentElement;
+                const columns = activeContainer.querySelectorAll('.cv-column');
+                activeCol1 = columns[0];
+                initialX = e.clientX;
+                initialCol1Width = activeCol1.offsetWidth;
+
+                document.addEventListener('mousemove', doResize);
+                document.addEventListener('mouseup', stopResize);
+                document.body.classList.add('is-resizing');
+            }
+
+            function doResize(e) {
+                if (!activeResizer) return;
+                const dx = e.clientX - initialX;
+                const newCol1Width = initialCol1Width + dx;
+                const containerWidth = activeContainer.offsetWidth;
+                
+                if (newCol1Width < 50 || newCol1Width > containerWidth - 50) return;
+
+                const newCol1Percent = (newCol1Width / containerWidth) * 100;
+                const newCol2Percent = 100 - newCol1Percent;
+
+                activeContainer.classList.remove('layout-2-col-33-67', 'layout-2-col-50-50', 'layout-2-col-67-33');
+                activeContainer.style.gridTemplateColumns = `${newCol1Percent}% ${newCol2Percent}%`;
+                activeResizer.style.left = `${newCol1Percent}%`;
+            }
+
+            function stopResize() {
+                document.removeEventListener('mousemove', doResize);
+                document.removeEventListener('mouseup', stopResize);
+                document.body.classList.remove('is-resizing');
+                activeResizer = null;
+                activeContainer = null;
+                activeCol1 = null;
+            }
+
+            function setupAllResizers() {
+                document.querySelectorAll('.a4-page').forEach(page => {
+                    const container = page.querySelector('.cv-body-container');
+                    const oldResizer = container.querySelector('.column-resizer');
+                    if (oldResizer) oldResizer.remove();
+
+                    const columns = container.querySelectorAll('.cv-column');
+                    if (columns.length === 2 && getComputedStyle(container).gridTemplateColumns.split(' ').length === 2) {
+                        const resizer = document.createElement('div');
+                        resizer.className = 'column-resizer';
+                        container.appendChild(resizer);
+                        const col1 = columns[0];
+                        const col1WidthPercent = parseFloat(getComputedStyle(col1).width) / parseFloat(getComputedStyle(container).width) * 100;
+                        resizer.style.left = col1WidthPercent + '%';
+                        resizer.addEventListener('mousedown', initResize);
+                    }
+                });
+            }
+
+            function initializeSortableForPage(pageId) {
+                const col1 = document.getElementById(`cv-col-${pageId}-1`);
+                const col2 = document.getElementById(`cv-col-${pageId}-2`);
+                const onEnd = () => { checkAllPagesOverflow(); };
+                if (col1) new Sortable(col1, { group: 'cv-modules', animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost', onEnd });
+                if (col2) new Sortable(col2, { group: 'cv-modules', animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost', onEnd });
+            }
+
+            function initializeSkillSorting() {
+                const skillLists = document.querySelectorAll('#cv-competences-preview ul');
+                skillLists.forEach(list => {
+                    new Sortable(list, {
+                        group: 'skills', animation: 150, ghostClass: 'skills-ghost',
+                        onEnd: function () {
+                            syncFormFromPreview(document.getElementById('cv-competences-preview'));
+                        }
+                    });
+                });
+            }
+
+            // --- PAGE & OVERFLOW MANAGEMENT ---
+            function checkPageOverflow(page) {
+                requestAnimationFrame(() => {
+                    // Using a 1px tolerance for floating point inaccuracies
+                    const isOverflowing = page.scrollHeight > page.clientHeight + 1;
+                    page.classList.toggle('is-overflowing', isOverflowing);
+                });
+            }
+
+            function checkAllPagesOverflow() {
+                document.querySelectorAll('.a4-page').forEach(checkPageOverflow);
+            }
+
+            function setupOverflowObserver(pageElement) {
+                const observer = new ResizeObserver(() => {
+                    checkPageOverflow(pageElement);
+                });
+                // Observe the page element itself and its direct content container
+                observer.observe(pageElement);
+                const bodyContainer = pageElement.querySelector('.cv-body-container');
+                if (bodyContainer) {
+                    observer.observe(bodyContainer);
+                }
+            }
+            
+            function addNewPage() {
+                pageCounter++;
+                const newPageContainer = document.createElement('div');
+                newPageContainer.className = 'a4-page-container';
+                const layoutClass = document.querySelector('.layout-btn.active')?.dataset.layout || 'layout-1-col';
+                
+                newPageContainer.innerHTML = `
+                    <div id="page-${pageCounter}" class="a4-page">
+                        <div class="cv-body-container ${layoutClass}">
+                            <div id="cv-col-${pageCounter}-1" class="cv-column"></div>
+                            <div id="cv-col-${pageCounter}-2" class="cv-column"></div>
+                        </div>
+                    </div>
+                    <button class="remove-page-btn no-print"><i class="fas fa-trash-can"></i></button>
+                `;
+                
+                const addBtnWrapper = document.getElementById('add-page-btn-wrapper');
+                preview.previewWrapper.insertBefore(newPageContainer, addBtnWrapper);
+                
+                const newPageElement = document.getElementById(`page-${pageCounter}`);
+                setupOverflowObserver(newPageElement);
+
+                initializeSortableForPage(pageCounter);
+                setupAllResizers();
+                checkAllPagesOverflow();
+            }
+
+
+            // --- DYNAMIC CONTENT ---
+            function createDynamicItem(container, fields, data = {}, index = -1) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'p-2 border rounded-md bg-white relative';
+                
+                fields.forEach(field => {
+                    const isTextarea = field.type === 'textarea';
+                    const input = document.createElement(isTextarea ? 'textarea' : 'input');
+                    
+                    if (!isTextarea) input.type = 'text';
+                    
+                    input.placeholder = field.placeholder;
+                    input.className = `cv-input w-full p-1 border rounded-sm mb-1 data-${field.key}`;
+                    if(isTextarea) input.rows = 3;
+                    input.value = data[field.key] || '';
+                    itemDiv.appendChild(input);
+                });
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '<i class="fas fa-times-circle text-red-400 hover:text-red-600"></i>';
+                removeBtn.className = 'absolute top-1 right-1 remove-dynamic-item-btn';
+                itemDiv.appendChild(removeBtn);
+                
+                if (index !== -1 && index < container.children.length) {
+                    container.insertBefore(itemDiv, container.children[index]);
+                } else {
+                    container.appendChild(itemDiv);
+                }
+                
+                updatePreview('form');
+                const firstInput = itemDiv.querySelector('input, textarea');
+                if (firstInput) firstInput.focus();
+            }
+
+            function getDynamicData(container) {
+                return Array.from(container.children).map(itemDiv => ({
+                    title: itemDiv.querySelector('.data-title')?.value || '',
+                    meta: itemDiv.querySelector('.data-meta')?.value || '',
+                    desc: itemDiv.querySelector('.data-desc')?.value || '',
+                }));
+            }
+            
+            // --- SKILLS RENDERING ---
+            function renderSkillsAsTags(text) {
+                let html = '';
+                const sections = text.split('\n').filter(Boolean);
+                sections.forEach(section => {
+                    const parts = section.split(':');
+                    if (parts.length === 2 && parts[0].trim() !== '') {
+                        html += `<h3 class="skill-category" contenteditable="true">${parts[0].trim()}</h3>`;
+                        html += `<ul>${parts[1].split(',').map(item => item.trim().replace(/\s*\(.*\)/, '')).filter(Boolean).map(item => `<li class="skill-item" contenteditable="false">${item}<span class="delete-skill-btn">&times;</span></li>`).join('')}</ul>`;
+                    } else {
+                        html += `<ul>${section.split(',').map(item => item.trim().replace(/\s*\(.*\)/, '')).filter(Boolean).map(item => `<li class="skill-item" contenteditable="false">${item}<span class="delete-skill-btn">&times;</span></li>`).join('')}</ul>`;
+                    }
+                });
+                return html;
+            }
+
+            function renderSkillsAsLevels() {
+                let html = '';
+                const gaugeStyle = document.querySelector('.gauge-style-btn.active')?.dataset.gaugeStyle || 'bar';
+                const skillItems = controls.skillsLevelList.querySelectorAll('.skill-level-item');
+
+                skillItems.forEach(item => {
+                    const name = item.querySelector('.skill-name-input').value;
+                    const level = item.querySelector('.skill-level-input').value;
+                    if (!name) return;
+
+                    html += `<div class="skill-level">
+                                        <div class="skill-level-label" contenteditable="true">${name}</div>
+                                        <div class="gauge-container">${renderGauge(level, gaugeStyle)}</div>
+                                    </div>`;
+                });
+                return html;
+            }
+            
+            function renderGauge(level, style) {
+                const max = 5;
+                let gaugeHtml = '';
+                switch (style) {
+                    case 'dots':
+                        gaugeHtml = `<div class="gauge-dots">`;
+                        for (let i = 1; i <= max; i++) gaugeHtml += `<span class="${i <= level ? 'filled' : ''}">●</span>`;
+                        gaugeHtml += `</div>`;
+                        break;
+                    case 'stars':
+                        gaugeHtml = `<div class="gauge-stars">`;
+                        for (let i = 1; i <= max; i++) gaugeHtml += `<i class="${i <= level ? 'fas' : 'far'} fa-star ${i <= level ? 'filled' : ''}"></i>`;
+                        gaugeHtml += `</div>`;
+                        break;
+                    case 'squares':
+                         gaugeHtml = `<div class="gauge-squares">`;
+                        for (let i = 1; i <= max; i++) gaugeHtml += `<span class="${i <= level ? 'filled' : ''}">■</span>`;
+                        gaugeHtml += `</div>`;
+                        break;
+                    case 'number':
+                        gaugeHtml = `<div class="gauge-number">${level}/${max}</div>`;
+                        break;
+                    case 'bar':
+                    default:
+                        const width = (level / max) * 100;
+                        gaugeHtml = `<div class="gauge-bar-bg"><div class="gauge-bar-fill" style="width: ${width}%;"></div></div>`;
+                        break;
+                }
+                return gaugeHtml;
+            }
+
+            function renderSkillsAsSimple(text) {
+                let html = '<ul>';
+                const skills = text.split(/,|\n/).map(s => s.trim().replace(/\s*\(.*\)/, '')).filter(Boolean);
+                skills.forEach(skill => {
+                    html += `<li>${skill}</li>`;
+                });
+                html += '</ul>';
+                return html;
+            }
+
+            function createSkillLevelItem(name = '', level = 3) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'skill-level-item flex items-center gap-2';
+                itemDiv.innerHTML = `
+                    <input type="text" placeholder="Compétence" value="${name}" class="skill-name-input cv-input flex-grow p-1 border rounded-sm">
+                    <input type="range" value="${level}" min="1" max="5" class="skill-level-input w-24">
+                    <span class="skill-level-value text-sm font-mono">${level}/5</span>
+                    <button class="remove-skill-level-btn text-red-400 hover:text-red-600"><i class="fas fa-times-circle"></i></button>
+                `;
+                controls.skillsLevelList.appendChild(itemDiv);
+                updatePreview('form');
+            }
+
+            // --- UPDATES & FORMATTING ---
+            function updateBannerBackground() {
+                const opacity = controls.bannerBgOpacity.value;
+                const blur = controls.bannerBgBlur.value;
+                const grayscale = controls.bannerBgGrayscale.checked;
+
+                controls.bannerBgOpacityValue.textContent = opacity;
+                controls.bannerBgBlurValue.textContent = blur;
+
+                preview.bannerBgImg.style.opacity = opacity;
+                preview.bannerBgImg.style.filter = `blur(${blur}px) grayscale(${grayscale ? 1 : 0})`;
+            }
+
+            function updatePreview(source = 'form') {
+                if (source === 'form' || source === 'banner-style' || source === 'theme' || source === 'state') {
+                    preview.cvNomPrenom.textContent = `${controls.prenom.value} ${controls.nom.value}`.trim() || 'Prénom NOM';
+                    preview.cvPoste.textContent = controls.poste.value || 'Poste Recherché';
+                    preview.cvDescription.innerHTML = `<div class="editable-wrapper"><p contenteditable="true">${controls.description.value.replace(/\n/g, '<br>') || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                    
+                    const renderDynamicList = (previewContainer, controlContainer, type) => {
+                        previewContainer.innerHTML = '';
+                        const data = getDynamicData(controlContainer);
+
+                        const createInsertButton = (type, index) => {
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'insert-line-wrapper';
+                            wrapper.innerHTML = `<button class="add-line-preview-btn" data-type="${type}" data-index="${index}" title="Insérer un nouveau bloc ici"><i class="fas fa-plus"></i></button>`;
+                            return wrapper;
+                        };
+
+                        const createItemContainer = (item, i) => {
+                            const itemContainer = document.createElement('div');
+                            itemContainer.className = 'dynamic-item-container';
+                            itemContainer.dataset.index = i;
+                            itemContainer.dataset.type = type;
+
+                            const itemContent = document.createElement('div');
+                            itemContent.className = "dynamic-preview-item";
+                            itemContent.innerHTML = `<button class="delete-block-btn" title="Supprimer le bloc"><i class="fas fa-trash-alt"></i></button>`;
+
+                            if (type === 'experience') {
+                                const titleHTML = `<div class="editable-wrapper"><p class="item-title" contenteditable="true">${item.title || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                                const metaHTML = `<div class="editable-wrapper"><p class="item-meta" contenteditable="true">${item.meta || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                                const descHTML = `<div class="editable-wrapper"><p class="mt-1" contenteditable="true">${item.desc.replace(/\n/g, '<br>') || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                                const addButtonHTML = `<button class="add-desc-line-btn"><i class="fas fa-plus mr-1"></i> Ajouter une mission</button>`;
+                                itemContent.innerHTML += `${titleHTML}${metaHTML}${descHTML}${addButtonHTML}`;
+                            } else { // formation
+                                const titleHTML = `<div class="editable-wrapper"><p class="item-title" contenteditable="true">${item.title || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                                const metaHTML = `<div class="editable-wrapper"><p class="item-meta" contenteditable="true">${item.meta || '&nbsp;'}</p><span class="delete-line-btn"><i class="fas fa-times"></i></span></div>`;
+                                itemContent.innerHTML += `${titleHTML}${metaHTML}`;
+                            }
+                            
+                            itemContainer.appendChild(createInsertButton(type, i));
+                            itemContainer.appendChild(itemContent);
+                            return itemContainer;
+                        };
+                        
+                        data.forEach((item, i) => {
+                            previewContainer.appendChild(createItemContainer(item, i));
+                        });
+                        const finalButtonWrapper = document.createElement('div');
+                        finalButtonWrapper.className = 'dynamic-item-container';
+                        finalButtonWrapper.appendChild(createInsertButton(type, data.length));
+                        previewContainer.appendChild(finalButtonWrapper);
+                    };
+
+                    renderDynamicList(preview.cvExperience, controls.experienceList, 'experience');
+                    renderDynamicList(preview.cvFormation, controls.formationList, 'formation');
+
+                    const skillStyle = document.querySelector('.skill-style-btn.active')?.dataset.skillStyle || 'tags';
+                    preview.cvCompetences.dataset.style = skillStyle;
+                    
+                    if (skillStyle === 'tags') {
+                        preview.cvCompetences.innerHTML = renderSkillsAsTags(controls.competences.value);
+                        initializeSkillSorting(); 
+                    } else if (skillStyle === 'levels') {
+                        preview.cvCompetences.innerHTML = renderSkillsAsLevels();
+                    } else { // simple
+                        preview.cvCompetences.innerHTML = renderSkillsAsSimple(controls.competences.value);
+                    }
+
+                    document.querySelectorAll('.custom-module-preview').forEach(m => m.remove());
+                    Array.from(controls.customSectionsList.children).forEach(div => {
+                        const sectionId = div.dataset.sectionId;
+                        const title = div.querySelector('input').value;
+                        const content = div.querySelector('textarea').value;
+                        const iconClass = div.dataset.icon || 'fas fa-puzzle-piece';
+                        
+                        const moduleDiv = document.createElement('div');
+                        moduleDiv.id = sectionId;
+                        moduleDiv.className = 'cv-module custom-module-preview'; 
+                        moduleDiv.innerHTML = `
+                            <div class="drag-handle"><i class="fas fa-grip-vertical"></i></div>
+                            <h2 class="section-title" data-section-id="${sectionId}"><i class="${iconClass} section-icon"></i><span contenteditable="true">${title}</span><div class="section-ai-actions"><button class="ai-action-btn toggle-visibility-btn" title="Masquer/Afficher la section"><i class="fas fa-eye"></i></button></div></h2>
+                            <div class="dynamic-preview-item">
+                                <button class="delete-block-btn" title="Supprimer la section"><i class="fas fa-trash-alt"></i></button>
+                                <div class="editable-wrapper">
+                                    <div class="custom-content" contenteditable="true">${content.replace(/\n/g, '<br>') || '&nbsp;'}</div>
+                                    <span class="delete-line-btn"><i class="fas fa-times"></i></span>
+                                </div>
+                            </div>
+                        `;
+                        const lastModule = document.querySelector('#competences-module');
+                        if(lastModule && lastModule.parentElement) {
+                            lastModule.parentElement.insertBefore(moduleDiv, lastModule.nextSibling);
+                        }
+                    });
+                    
+                    preview.bannerNom.textContent = controls.bannerNom.value || "Nom Prénom Recruteur";
+                    preview.bannerPoste.textContent = controls.bannerPoste.value || "Poste du Recruteur";
+                    preview.bannerEmail.textContent = controls.bannerEmail.value || "email@recruteur.com";
+                    preview.bannerTel.textContent = controls.bannerTel.value || "01 23 45 67 89";
+                }
+
+                preview.bannerNom.style.fontFamily = controls.bannerNomFont.value;
+                preview.bannerNom.style.fontSize = controls.bannerNomSize.value + 'pt';
+                preview.bannerNom.style.color = controls.bannerNomColor.value;
+                preview.bannerNom.style.fontWeight = controls.bannerNomBold.classList.contains('active') ? 'bold' : 'normal';
+                preview.bannerNom.style.fontStyle = controls.bannerNomItalic.classList.contains('active') ? 'italic' : 'normal';
+                
+                preview.bannerPoste.style.fontSize = controls.bannerPosteSize.value + 'pt';
+                preview.bannerPoste.style.color = controls.bannerPosteColor.value;
+                preview.bannerPoste.style.fontWeight = controls.bannerPosteBold.classList.contains('active') ? 'bold' : 'normal';
+                preview.bannerPoste.style.fontStyle = controls.bannerPosteItalic.classList.contains('active') ? 'italic' : 'normal';
+
+                preview.bannerContact.style.fontSize = controls.bannerContactSize.value + 'pt';
+                preview.bannerContact.style.color = controls.bannerContactColor.value;
+                preview.bannerContact.style.fontWeight = controls.bannerContactBold.classList.contains('active') ? 'bold' : 'normal';
+                preview.bannerContact.style.fontStyle = controls.bannerContactItalic.classList.contains('active') ? 'italic' : 'normal';
+                
+                const dispo = controls.qualificationDispo.value;
+                const salaire = controls.qualificationSalaire.value;
+                const loc = controls.qualificationLoc.value;
+                let qualHTML = '';
+                if (dispo) qualHTML += `<div><i class="fas fa-calendar-check mr-1 text-gray-400"></i> ${dispo}</div>`;
+                if (salaire) qualHTML += `<div><i class="fas fa-euro-sign mr-1 text-gray-400"></i> ${salaire}</div>`;
+                if (loc) qualHTML += `<div><i class="fas fa-map-marker-alt mr-1 text-gray-400"></i> ${loc}</div>`;
+                preview.qualificationPreview.innerHTML = qualHTML;
+                preview.qualificationModule.style.display = (dispo || salaire || loc) ? '' : 'none';
+
+                const isBannerEnabled = controls.toggleBanner.checked;
+                const isBannerInTop = preview.fixedBannerTop.contains(preview.banner);
+                const isBannerInBottom = preview.fixedBannerBottom.contains(preview.banner);
+                const isBannerInModule = preview.bannerModule.contains(preview.banner);
+                
+                preview.bannerModule.classList.toggle('hidden', !isBannerEnabled || !isBannerInModule);
+                preview.fixedBannerTop.style.display = (isBannerEnabled && isBannerInTop) ? 'block' : 'none';
+                preview.fixedBannerBottom.style.display = (isBannerEnabled && isBannerInBottom) ? 'block' : 'none';
+
+                checkAllPagesOverflow();
+            }
+            
+            function syncFormFromPreview(element) {
+                if (!element) return;
+                const id = element.id;
+
+                if (id === 'cv-competences-preview') {
+                    const style = preview.cvCompetences.dataset.style;
+                    if (style === 'levels') {
+                        const skillLabels = preview.cvCompetences.querySelectorAll('.skill-level-label');
+                        const controlInputs = controls.skillsLevelList.querySelectorAll('.skill-name-input');
+                        skillLabels.forEach((label, index) => {
+                            if (controlInputs[index]) {
+                                controlInputs[index].value = label.textContent;
+                            }
+                        });
+                    } else { 
+                        let result = [];
+                        const nodes = Array.from(element.childNodes);
+                        for (let i = 0; i < nodes.length; i++) {
+                            const node = nodes[i];
+                            if (node.nodeName === 'H3' && node.classList.contains('skill-category')) {
+                                const categoryName = node.textContent.trim();
+                                const nextNode = nodes[i + 1];
+                                if (nextNode && nextNode.nodeName === 'UL') {
+                                    const skills = Array.from(nextNode.querySelectorAll('li.skill-item')).map(li => li.textContent.replace('×', '').trim()).filter(Boolean).join(', ');
+                                    if (categoryName && skills) {
+                                        result.push(`${categoryName}: ${skills}`);
+                                    }
+                                    i++; 
+                                }
+                            } else if (node.nodeName === 'UL') {
+                                const skills = Array.from(node.querySelectorAll('li')).map(li => li.textContent.replace('×', '').trim()).filter(Boolean).join(', ');
+                                if (skills) {
+                                    result.push(skills);
+                                }
+                            }
+                        }
+                        controls.competences.value = result.join('\n');
+                    }
+                    return;
+                }
+                
+                let text = element.innerHTML.replace(/<br\s*\/?>/gi, '\n').trim();
+                text = new DOMParser().parseFromString(text, "text/html").documentElement.textContent;
+
+                if (id) {
+                    switch (id) {
+                        case 'cv-nom-prenom-preview': const nameParts = text.trim().split(' '); controls.prenom.value = nameParts.shift() || ''; controls.nom.value = nameParts.join(' ') || ''; break;
+                        case 'cv-poste-preview': controls.poste.value = text; break;
+                        case 'cv-description-preview': controls.description.value = text; break;
+                        case 'banner-nom-preview': controls.bannerNom.value = text; break;
+                        case 'banner-poste-preview': controls.bannerPoste.value = text; break;
+                        case 'banner-email-preview': controls.bannerEmail.value = text; break;
+                        case 'banner-tel-preview': controls.bannerTel.value = text; break;
+                    }
+                } else {
+                    const itemContainer = element.closest('.dynamic-item-container');
+                    if (itemContainer) {
+                        const index = parseInt(itemContainer.dataset.index, 10);
+                        const type = itemContainer.dataset.type;
+                        const formList = type === 'experience' ? controls.experienceList : controls.formationList;
+                        const formItem = formList.children[index];
+                        if (!formItem) return;
+
+                        const title = itemContainer.querySelector('.item-title')?.textContent || '';
+                        const meta = itemContainer.querySelector('.item-meta')?.textContent || '';
+                        const descEl = itemContainer.querySelector('.mt-1');
+                        const desc = descEl ? new DOMParser().parseFromString(descEl.innerHTML.replace(/<br\s*\/?>/gi, '\n'), "text/html").documentElement.textContent : '';
+
+                        if (formItem.querySelector('.data-title')) formItem.querySelector('.data-title').value = title;
+                        if (formItem.querySelector('.data-meta')) formItem.querySelector('.data-meta').value = meta;
+                        if (formItem.querySelector('.data-desc')) formItem.querySelector('.data-desc').value = desc;
+
+                    } else {
+                        const customModule = element.closest('.custom-module-preview');
+                        if (customModule) {
+                            const sectionId = customModule.id;
+                            const controlTitleInput = document.getElementById(`custom-section-title-${sectionId}`);
+                            const controlContentTextarea = document.getElementById(`custom-section-content-${sectionId}`);
+                            
+                            if (element.matches('[contenteditable].section-title span')) {
+                               if (controlTitleInput) controlTitleInput.value = element.textContent;
+                            }
+                            if (element.matches('[contenteditable].custom-content')) {
+                               if (controlContentTextarea) controlContentTextarea.value = text;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function moveBannerTo(destination) {
+                const recruiterBanner = preview.banner;
+                if (destination === 'top') {
+                    preview.fixedBannerTop.appendChild(recruiterBanner);
+                } else if (destination === 'bottom') {
+                    preview.fixedBannerBottom.appendChild(recruiterBanner);
+                } else { // 'modular'
+                    preview.bannerModule.querySelector('.drag-handle').insertAdjacentElement('afterend', recruiterBanner);
+                }
+                const isModular = (destination === 'modular');
+                document.getElementById('banner-fix-controls').classList.toggle('hidden', !isModular);
+                controls.modularBannerBtn.classList.toggle('hidden', isModular);
+                updatePreview('banner-move');
+            }
+
+            function addCustomSection(title = 'Nouvelle Section', content = '', id = null, icon = 'fas fa-puzzle-piece') {
+                customSectionCounter++;
+                const sectionId = id || `custom-module-${Date.now()}-${customSectionCounter}`;
+                
+                const controlDiv = document.createElement('div');
+                controlDiv.className = 'p-2 border rounded-md bg-white relative';
+                controlDiv.dataset.sectionId = sectionId;
+                controlDiv.dataset.icon = icon;
+                controlDiv.innerHTML = `
+                    <input type="text" value="${title}" class="w-full p-1 border rounded-sm mb-1 font-semibold custom-section-input" id="custom-section-title-${sectionId}">
+                    <textarea rows="4" class="w-full p-1 border rounded-sm mb-1 custom-section-input" id="custom-section-content-${sectionId}" placeholder="Contenu...">${content}</textarea>
+                    <button class="absolute top-1 right-1 text-red-400 hover:text-red-600 remove-section-btn"><i class="fas fa-times-circle"></i></button>
+                `;
+                controls.customSectionsList.appendChild(controlDiv);
+                
+                updatePreview('form');
+                updateAllStyles();
+            }
+
+            async function callGeminiAPI(prompt, schema) {
+                showLoader("L'IA réfléchit...");
+                try {
+                    const apiKey = ""; // Provided automatically by the environment
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                    
+                    const payload = {
+                        contents: [{ role: "user", parts: [{ text: prompt }] }],
+                        generationConfig: schema ? { responseMimeType: "application/json", responseSchema: schema } : {}
+                    };
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`Erreur API: ${response.status} ${response.statusText} - ${errorBody}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0) {
+                         if (result.candidates[0].finishReason !== "STOP" && result.candidates[0].finishReason !== "MAX_TOKENS") {
+                               throw new Error(`L'IA a été bloquée (raison: ${result.candidates[0].finishReason}). Veuillez reformuler votre demande.`);
+                         }
+                        if (result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                            const text = result.candidates[0].content.parts[0].text;
+                            return schema ? JSON.parse(text) : text;
+                        }
+                    }
+                    
+                    throw new Error("Réponse invalide ou vide reçue de l'IA.");
+
+                } catch (error) {
+                    console.error("Erreur détaillée de l'IA:", error);
+                    showNotification(`Erreur de l'IA : ${error.message}`, 'error', 5000);
+                    return null;
+                } finally {
+                    hideLoader();
+                }
+            }
+            
+            function updateAllStyles() {
+                root.style.setProperty('--primary-color', controls.primaryColorPicker.value);
+                root.style.setProperty('--secondary-color', controls.secondaryColorPicker.value);
+                root.style.setProperty('--body-text-color', controls.bodyTextColorPicker.value);
+                root.style.setProperty('--font-family-h1', controls.fontFamilyH1Select.value);
+                root.style.setProperty('--font-family-h2', controls.fontFamilyH2Select.value);
+                root.style.setProperty('--font-family-body', controls.fontFamilyBodySelect.value);
+
+                const activeStyle = document.querySelector('.section-title-style-btn.active')?.dataset.titleStyle || 'style-underline';
+                document.querySelectorAll('.section-title').forEach(title => {
+                    title.classList.remove('style-underline', 'style-side-line', 'style-background', 'style-boxed');
+                    title.classList.add(activeStyle);
+                });
+                
+                const banner = preview.banner;
+                const newBannerStyle = controls.bannerStyleSelect.value;
+                const newAlign = document.querySelector('.banner-align-btn.active')?.dataset.bannerAlign || 'left';
+                const isInverted = controls.bannerInvertBtn.classList.contains('active');
+
+                const classesToRemove = Array.from(banner.classList).filter(c => c.startsWith('banner-style-'));
+                if (classesToRemove.length > 0) banner.classList.remove(...classesToRemove);
+
+                if (newBannerStyle) banner.classList.add(newBannerStyle);
+                
+                const contentWrapper = banner.querySelector('.banner-content-wrapper');
+                contentWrapper.className = 'banner-content-wrapper'; // Reset classes
+                contentWrapper.classList.add(`banner-align-${newAlign}`);
+                if (isInverted) contentWrapper.classList.add('banner-layout-inverted');
+                
+                checkAllPagesOverflow();
+            }
+
+            function populateFontSelectors() {
+                const fonts = [
+                    { name: 'Lato', value: "'Lato', sans-serif" },
+                    { name: 'Montserrat', value: "'Montserrat', sans-serif" },
+                    { name: 'Roboto Mono', value: "'Roboto Mono', monospace" },
+                    { name: 'Playfair Display', value: "'Playfair Display', serif" },
+                    { name: 'Merriweather', value: "'Merriweather', serif" },
+                    { name: 'Oswald', value: "'Oswald', sans-serif" },
+                    { name: 'Open Sans', value: "'Open Sans', sans-serif" },
+                    { name: 'Source Sans Pro', value: "'Source Sans Pro', sans-serif" },
+                    { name: 'Nunito Sans', value: "'Nunito Sans', sans-serif" },
+                    { name: 'Cormorant Garamond', value: "'Cormorant Garamond', serif" },
+                ];
+                const selects = [controls.fontFamilyH1Select, controls.fontFamilyH2Select, controls.fontFamilyBodySelect, controls.bannerNomFont];
+                selects.forEach(select => {
+                    if (!select) return;
+                    select.innerHTML = '';
+                    fonts.forEach(font => {
+                        const option = document.createElement('option');
+                        option.value = font.value;
+                        option.textContent = font.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+            
+            function populateIconPicker() {
+                const icons = ["fa-user-circle", "fa-briefcase", "fa-graduation-cap", "fa-star", "fa-puzzle-piece", "fa-globe", "fa-paint-brush", "fa-certificate", "fa-lightbulb", "fa-heart", "fa-cogs", "fa-code", "fa-chart-line", "fa-comments", "fa-bullhorn", "fa-trophy", "fa-book", "fa-wrench", "fa-users", "fa-award", "fa-phone", "fa-envelope", "fa-map-marker-alt", "fa-linkedin", "fa-github"];
+                controls.iconPickerGrid.innerHTML = '';
+                icons.forEach(iconClass => {
+                    const iconEl = document.createElement('i');
+                    iconEl.className = `fas ${iconClass}`;
+                    iconEl.dataset.icon = `fas ${iconClass}`;
+                    controls.iconPickerGrid.appendChild(iconEl);
+                });
+            }
+
+            function resetCVToDefault() {
+                document.querySelectorAll('.cv-input, .banner-input, .custom-section-input').forEach(input => {
+                    if(input.type === 'checkbox') input.checked = false;
+                    else if (input.type !== 'range' && input.type !== 'color') input.value = '';
+                });
+                
+                controls.experienceList.innerHTML = '';
+                controls.formationList.innerHTML = '';
+                controls.customSectionsList.innerHTML = '';
+                controls.skillsLevelList.innerHTML = '';
+                
+                document.querySelectorAll('.custom-module-preview').forEach(m => m.remove());
+                
+                setDefaultRecruiterInfo();
+                applyTheme('professional');
+                document.querySelector('.layout-btn[data-layout="layout-1-col"]').click();
+                document.querySelector('.skill-style-btn[data-skill-style="tags"]').click();
+                
+                Object.values(sliders).forEach(config => {
+                    const defaultValue = config.el.defaultValue;
+                    config.el.value = defaultValue;
+                    config.valueEl.textContent = defaultValue;
+                    root.style.setProperty(config.property, `${defaultValue}${config.unit}`);
+                });
+                
+                moveBannerTo('modular');
+                removeBannerBackground();
+
+                document.querySelectorAll('.completion-checkbox').forEach(cb => {
+                    cb.checked = false;
+                    cb.closest('details').open = true;
+                });
+                updateProgressBar();
+                
+                updatePreview('form');
+                updateAllStyles();
+                showNotification("Le CV a été réinitialisé.", "success");
+            }
+
+            function applyTheme(themeName) {
+                const theme = themes[themeName];
+                if (!theme) return;
+
+                controls.primaryColorPicker.value = theme.primaryColor;
+                controls.secondaryColorPicker.value = theme.secondaryColor;
+                controls.bodyTextColorPicker.value = theme.bodyTextColor;
+                controls.fontFamilyH1Select.value = theme.fontH1;
+                controls.fontFamilyH2Select.value = theme.fontH2;
+                controls.fontFamilyBodySelect.value = theme.fontBody;
+
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
+
+                updateAllStyles();
+                updatePreview('theme');
+            }
+            
+            async function handleAIAction(action, moduleElement) {
+                let prompt = '';
+                let targetControl = null;
+
+                switch (action) {
+                    case 'rewrite-profile':
+                        const profileText = controls.description.value;
+                        if (!profileText) { showNotification("Le profil est vide.", "error"); return; }
+                        prompt = `En tant qu'expert en recrutement, réécris ce profil de CV pour qu'il soit plus percutant et professionnel, en utilisant des verbes d'action forts. Garde une longueur similaire et un ton professionnel. Ne retourne que le paragraphe final réécrit, sans aucun commentaire. Le profil actuel est : "${profileText}"`;
+                        targetControl = controls.description;
+                        const newProfile = await callGeminiAPI(prompt);
+                        if (newProfile && targetControl) {
+                            targetControl.value = newProfile;
+                            showNotification("Profil amélioré par l'IA.", "success");
+                        }
+                        break;
+                    case 'summarize-experience':
+                        await summarizeAllExperiencesAI();
+                        break;
+                    case 'rewrite-formation':
+                        const formations = getDynamicData(controls.formationList);
+                        if (formations.length === 0) { showNotification("Aucune formation à améliorer.", "error"); return; }
+                        const formationSchema = { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "STRING" }, meta: { type: "STRING" } } } };
+                        const formationPrompt = `En tant qu'expert RH, améliore la formulation de ces entrées de formation pour un CV. Rends les titres plus percutants et les descriptions plus claires si nécessaire. Ne retourne que le résultat final sous forme de tableau JSON \`[{"title": "...", "meta": "..."}]\` sans aucun commentaire ou texte additionnel. Voici les données actuelles : ${JSON.stringify(formations.map(f => ({ title: f.title, meta: f.meta })))}`;
+                        const newFormations = await callGeminiAPI(formationPrompt, formationSchema);
+                        if (newFormations && Array.isArray(newFormations)) {
+                            controls.formationList.innerHTML = '';
+                            newFormations.forEach(form => createDynamicItem(controls.formationList, [{ key: 'title', placeholder: 'Nom du diplôme' }, { key: 'meta', placeholder: 'Établissement & Année' }], form));
+                            showNotification("Formations améliorées par l'IA.", "success");
+                        }
+                        break;
+                    case 'rewrite-skills':
+                        await synthesizeSkillsWithAI();
+                        break;
+                    default:
+                        return;
+                }
+                updatePreview('form');
+            }
+            
+            function setDefaultRecruiterInfo() {
+                controls.bannerNom.value = "Lyes AMARA";
+                controls.bannerPoste.value = "Responsable d’activité recrutement – BTP – France";
+                controls.bannerEmail.value = "l.amara@ltd-international.com";
+                controls.bannerTel.value = "01 56 02 12 25 / 06 34 25 32 96";
+            }
+
+            function anonymizeCV() {
+                if (isAnonymized) {
+                    controls.nom.value = originalData.nom;
+                    controls.prenom.value = originalData.prenom;
+                    
+                    controls.anonymizeBtn.innerHTML = '<i class="fa-solid fa-user-secret"></i> Anonymiser le CV';
+                    isAnonymized = false;
+                    showNotification("CV désanonymisé.", "success");
+                } else {
+                    originalData = {
+                        nom: controls.nom.value,
+                        prenom: controls.prenom.value,
+                    };
+                    
+                    const firstLetter = originalData.nom ? originalData.nom.charAt(0) + '.' : '';
+                    controls.nom.value = firstLetter;
+                    controls.prenom.value = originalData.prenom;
+                    
+                    controls.anonymizeBtn.innerHTML = '<i class="fa-solid fa-user-check"></i> Désanonymiser le CV';
+                    isAnonymized = true;
+                    showNotification("CV anonymisé.", "success");
+                }
+                updatePreview('form');
+            }
+
+            async function summarizeAllExperiencesAI() {
+                const experienceItems = controls.experienceList.querySelectorAll('.data-desc');
+                if (experienceItems.length === 0) {
+                    showNotification("Aucune expérience à résumer.", "error");
+                    return;
+                }
+
+                showLoader("Synthèse des expériences...");
+                for (let i = 0; i < experienceItems.length; i++) {
+                    const textarea = experienceItems[i];
+                    const originalText = textarea.value;
+                    if (originalText) {
+                        const prompt = `Résume la description de cette mission professionnelle en 5 lignes maximum. Utilise des verbes d'action et un format de liste à puces (chaque point commençant par '• '). Ne retourne que le texte final formaté en liste à puces, sans aucune phrase d'introduction, de conclusion ou de commentaire. Voici la description : "${originalText}"`;
+                        const summary = await callGeminiAPI(prompt);
+                        if (summary) {
+                            textarea.value = summary;
+                        }
+                    }
+                }
+                hideLoader();
+                updatePreview('form');
+                showNotification("Toutes les expériences ont été synthétisées.", "success");
+            }
+
+            async function synthesizeSkillsWithAI() {
+                const currentSkills = controls.competences.value;
+                if (!currentSkills) {
+                    showNotification("La liste de compétences est vide.", "error");
+                    return;
+                }
+                const prompt = `Analyse cette liste de compétences de CV: "${currentSkills}". Regroupe-les par catégories pertinentes (ex: Langages, Frameworks, Outils, Logiciels, Langues, etc.). Retourne le résultat sous la forme "Catégorie 1: compétence A, compétence B\nCatégorie 2: compétence C, compétence D". Ne retourne que le texte final formaté, sans aucune phrase d'introduction, de conclusion ou de commentaire.`;
+
+                const organizedSkills = await callGeminiAPI(prompt);
+                if (organizedSkills) {
+                    controls.competences.value = organizedSkills;
+                    updatePreview('form');
+                    showNotification("Compétences organisées par l'IA.", "success");
+                }
+            }
+
+            async function limitSkillsWithAI() {
+                const currentSkills = controls.competences.value;
+                const jobTitle = controls.poste.value;
+                if (!currentSkills) {
+                    showNotification("La liste de compétences est vide.", "error");
+                    return;
+                }
+                if (!jobTitle) {
+                    showNotification("Veuillez renseigner le 'Poste recherché' pour de meilleurs résultats.", "error");
+                    return;
+                }
+                const prompt = `À partir de cette liste de compétences: "${currentSkills}", sélectionne les 10 compétences les plus importantes et pertinentes pour un poste de "${jobTitle}". Retourne uniquement la liste des 10 compétences, séparées par des virgules, sans aucune phrase d'introduction, de conclusion ou de commentaire.`;
+
+                const limitedSkills = await callGeminiAPI(prompt);
+                if (limitedSkills) {
+                    controls.competences.value = limitedSkills;
+                    updatePreview('form');
+                    showNotification("Compétences limitées à 10 par l'IA.", "success");
+                }
+            }
+            
+            function removeBannerBackground() {
+                preview.bannerBgImg.src = '';
+                controls.bannerBgImage.value = ''; // Reset file input
+                controls.bannerBgOpacity.value = 1;
+                controls.bannerBgBlur.value = 0;
+                controls.bannerBgGrayscale.checked = false;
+                updateBannerBackground();
+            }
+
+            // NEW: Progress Bar Update Function
+            function updateProgressBar() {
+                const checkboxes = document.querySelectorAll('.completion-checkbox');
+                const total = checkboxes.length;
+                const completed = document.querySelectorAll('.completion-checkbox:checked').length;
+                const percentage = total > 0 ? (completed / total) * 100 : 0;
+
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+
+                if(progressBar) progressBar.style.width = `${percentage}%`;
+                if(progressText) progressText.textContent = `${completed}/${total} sections complétées`;
+            }
+
+            function populateLevelsFromText() {
+                const text = controls.competences.value;
+                const skills = text
+                    .replace(/.*:/g, '') // Remove category labels like "Langages:"
+                    .split(/,|\n/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
+                controls.skillsLevelList.innerHTML = '';
+                skills.forEach(skill => createSkillLevelItem(skill, 3));
+            }
+
+            // --- INITIALIZATION FUNCTION ---
+            function initializeAll() {
+                console.log("Initializing UI components and event listeners...");
+                
+                reinitializePreviewSelectors();
+                initializeSortableForPage(1);
+                
+                populateFontSelectors();
+                populateIconPicker();
+
+                // --- EVENT LISTENERS ---
+
+                const tabNavigation = document.getElementById('tab-navigation');
+                const tabPanels = document.querySelectorAll('.tab-panel');
+                const tabButtons = document.querySelectorAll('.tab-btn');
+                
+                tabNavigation.addEventListener('click', (e) => {
+                    const tabBtn = e.target.closest('.tab-btn');
+                    if (!tabBtn) return;
+                    tabPanels.forEach(panel => panel.classList.add('hidden'));
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('border-blue-600', 'text-blue-600');
+                        btn.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    const targetPanelId = tabBtn.dataset.target;
+                    document.querySelector(targetPanelId).classList.remove('hidden');
+                    tabBtn.classList.add('border-blue-600', 'text-blue-600');
+                    tabBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                });
+                tabButtons[0].click();
+
+                controls.undoBtn.addEventListener('click', undo);
+                controls.redoBtn.addEventListener('click', redo);
+                document.addEventListener('keydown', (e) => {
+                    if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); }
+                    if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); }
+                });
+
+                controls.addExperienceBtn.addEventListener('click', () => createDynamicItem(controls.experienceList, [{ key: 'title', placeholder: 'Titre du poste' }, { key: 'meta', placeholder: 'Entreprise & Dates' }, { key: 'desc', placeholder: 'Description des missions', type: 'textarea' }]));
+                controls.addFormationBtn.addEventListener('click', () => createDynamicItem(controls.formationList, [{ key: 'title', placeholder: 'Nom du diplôme' }, { key: 'meta', placeholder: 'Établissement & Année' }]));
+                
+                const controlsPanel = document.getElementById('controls');
+                controlsPanel.addEventListener('input', (e) => {
+                    if (e.target.matches('.cv-input, .banner-input, .custom-section-input, #banner-bg-opacity, #banner-bg-blur, #banner-bg-grayscale')) {
+                        if (e.target.matches('#banner-bg-opacity, #banner-bg-blur, #banner-bg-grayscale')) {
+                             updateBannerBackground();
+                        } else {
+                             updatePreview('form');
+                             updateAllStyles();
+                        }
+                    }
+                    if(e.target.matches('.completion-checkbox')) {
+                        updateProgressBar();
+                    }
+                     if(e.target.matches('.skill-level-input')) {
+                         e.target.nextElementSibling.textContent = `${e.target.value}/5`;
+                         updatePreview('form');
+                     }
+                });
+                 controlsPanel.addEventListener('change', (e) => {
+                    if (e.target.matches('.cv-input, .banner-input, .custom-section-input')) {
+                        updatePreview('form');
+                        updateAllStyles();
+                    }
+                });
+
+                controls.bannerImage.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => { preview.bannerImg.src = event.target.result; };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                controls.bannerBgImage.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            preview.bannerBgImg.src = event.target.result;
+                            updateBannerBackground();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                preview.previewWrapper.addEventListener('input', (e) => {
+                    if (e.target.hasAttribute('contenteditable')) {
+                        syncFormFromPreview(e.target);
+                    }
+                });
+
+                preview.previewWrapper.addEventListener('click', (e) => {
+                    const target = e.target;
+                    
+                    const visibilityBtn = target.closest('.toggle-visibility-btn');
+                    if (visibilityBtn) {
+                        const moduleElement = visibilityBtn.closest('.cv-module');
+                        const icon = visibilityBtn.querySelector('i');
+                        if (moduleElement) {
+                            moduleElement.classList.toggle('section-hidden');
+                            const isHidden = moduleElement.classList.contains('section-hidden');
+                            if (icon) {
+                                icon.className = `fas ${isHidden ? 'fa-eye-slash' : 'fa-eye'}`;
+                            }
+                        }
+                        return;
+                    }
+
+                    const aiBtn = target.closest('.ai-action-btn');
+                    if (aiBtn) {
+                        const action = aiBtn.dataset.action;
+                        if (action) {
+                            handleAIAction(action);
+                        }
+                        return;
+                    }
+
+                    const deleteBlockBtn = target.closest('.delete-block-btn');
+                    if (deleteBlockBtn) {
+                        const itemContainer = deleteBlockBtn.closest('.dynamic-item-container');
+                        if (itemContainer) {
+                            const index = parseInt(itemContainer.dataset.index, 10);
+                            const type = itemContainer.dataset.type;
+                            const formList = type === 'experience' ? controls.experienceList : controls.formationList;
+                            if (formList.children[index]) {
+                                formList.children[index].remove();
+                                updatePreview('form');
+                            }
+                        } else {
+                            const customModule = deleteBlockBtn.closest('.custom-module-preview');
+                            if(customModule) {
+                                const controlItem = controls.customSectionsList.querySelector(`[data-section-id="${customModule.id}"]`);
+                                if(controlItem) controlItem.remove();
+                                customModule.remove();
+                            }
+                        }
+                        return;
+                    }
+
+                    const addLineBtn = target.closest('.add-line-preview-btn');
+                    if (addLineBtn) {
+                        const index = parseInt(addLineBtn.dataset.index, 10);
+                        const type = addLineBtn.dataset.type;
+                        if (type === 'experience') createDynamicItem(controls.experienceList, [{ key: 'title', placeholder: 'Titre du poste' }, { key: 'meta', placeholder: 'Entreprise & Dates' }, { key: 'desc', placeholder: 'Description des missions', type: 'textarea' }], {}, index);
+                        else if (type === 'formation') createDynamicItem(controls.formationList, [{ key: 'title', placeholder: 'Nom du diplôme' }, { key: 'meta', placeholder: 'Établissement & Année' }], {}, index);
+                        return;
+                    }
+
+                    const deleteLineBtn = target.closest('.delete-line-btn');
+                    if (deleteLineBtn) {
+                        const wrapper = deleteLineBtn.closest('.editable-wrapper');
+                        if (wrapper) {
+                            wrapper.remove();
+                            syncFormFromPreview(wrapper.closest('.dynamic-preview-item') || document.getElementById('cv-description-preview'));
+                        }
+                        return;
+                    }
+                    
+                    const removePageBtn = target.closest('.remove-page-btn');
+                    if (removePageBtn) {
+                        const pageContainer = removePageBtn.closest('.a4-page-container');
+                        if (pageContainer) {
+                            pageContainer.remove();
+                            checkAllPagesOverflow();
+                        }
+                        return;
+                    }
+                });
+
+                controlsPanel.addEventListener('click', (e) => {
+                    const target = e.target;
+                    
+                    const removeBtn = target.closest('.remove-dynamic-item-btn, .remove-skill-level-btn');
+                    if (removeBtn) {
+                        removeBtn.parentElement.remove();
+                        updatePreview('form');
+                        return;
+                    }
+                    const removeSectionBtn = target.closest('.remove-section-btn');
+                    if (removeSectionBtn) {
+                        const sectionDiv = removeSectionBtn.closest('[data-section-id]');
+                        const sectionId = sectionDiv.dataset.sectionId;
+                        sectionDiv.remove();
+                        const previewModule = document.getElementById(sectionId);
+                        if(previewModule) previewModule.remove();
+                        return;
+                    }
+                    
+                    const layoutBtn = target.closest('.layout-btn');
+                    if (layoutBtn) {
+                        const layout = layoutBtn.dataset.layout;
+                        document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+                        layoutBtn.classList.add('active');
+                        document.querySelectorAll('.cv-body-container').forEach(container => {
+                           container.className = `cv-body-container ${layout}`;
+                           if (layout === 'layout-1-col') {
+                               const col2 = container.querySelector('.cv-column:nth-child(2)');
+                               const col1 = container.querySelector('.cv-column:nth-child(1)');
+                               if (col2 && col1) Array.from(col2.children).forEach(module => col1.appendChild(module));
+                           }
+                           container.style.gridTemplateColumns = '';
+                        });
+                        setupAllResizers();
+                        checkAllPagesOverflow();
+                        return;
+                    }
+
+                    const titleStyleBtn = target.closest('.section-title-style-btn');
+                    if (titleStyleBtn) {
+                        document.querySelectorAll('.section-title-style-btn').forEach(b => b.classList.remove('active'));
+                        titleStyleBtn.classList.add('active');
+                        updateAllStyles();
+                        return;
+                    }
+                    
+                    const themeBtn = target.closest('.theme-btn');
+                    if (themeBtn) {
+                        applyTheme(themeBtn.dataset.theme);
+                        return;
+                    }
+
+                    const logoSizeBtn = target.closest('.logo-size-btn');
+                    if (logoSizeBtn) {
+                        document.querySelectorAll('.logo-size-btn').forEach(b => b.classList.remove('active'));
+                        logoSizeBtn.classList.add('active');
+                        preview.bannerImg.className = `logo-${logoSizeBtn.dataset.logoSize}`;
+                        return;
+                    }
+
+                    const skillStyleBtn = target.closest('.skill-style-btn');
+                    if (skillStyleBtn) {
+                        document.querySelectorAll('.skill-style-btn').forEach(b => b.classList.remove('active'));
+                        skillStyleBtn.classList.add('active');
+                        const style = skillStyleBtn.dataset.skillStyle;
+                        controls.skillsTextControls.classList.toggle('hidden', style === 'levels');
+                        controls.skillsLevelControls.classList.toggle('hidden', style !== 'levels');
+                        if (style === 'levels') {
+                            populateLevelsFromText();
+                        }
+                        updatePreview('form');
+                        return;
+                    }
+                    
+                    const gaugeStyleBtn = target.closest('.gauge-style-btn');
+                    if (gaugeStyleBtn) {
+                        document.querySelectorAll('.gauge-style-btn').forEach(b => b.classList.remove('active'));
+                        gaugeStyleBtn.classList.add('active');
+                        updatePreview('form');
+                        return;
+                    }
+
+                    const styleToggleBtn = target.closest('.style-toggle-btn');
+                    if (styleToggleBtn) {
+                        styleToggleBtn.classList.toggle('active');
+                        updatePreview('form');
+                        return;
+                    }
+                });
+
+                Object.values(sliders).forEach(config => {
+                    config.el.addEventListener('input', () => {
+                        config.valueEl.textContent = config.el.value;
+                        root.style.setProperty(config.property, `${config.el.value}${config.unit}`);
+                        checkAllPagesOverflow();
+                    });
+                });
+                
+                controls.analyzeBtn.addEventListener('click', async () => {
+                    const text = controls.aiInput.value;
+                    if (!text) { showNotification("Veuillez coller du texte à analyser.", "error"); return; }
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            nom: { type: "STRING" }, prenom: { type: "STRING" }, poste: { type: "STRING" }, description: { type: "STRING" },
+                            experiences: { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "STRING" }, meta: { type: "STRING" }, desc: { type: "STRING" } } } },
+                            formations: { type: "ARRAY", items: { type: "OBJECT", properties: { title: { type: "STRING" }, meta: { type: "STRING" } } } },
+                            competences: { type: "STRING" }
+                        }
+                    };
+                    const prompt = `Analyse le texte suivant et extrais les informations pour un CV. Formate la sortie en JSON respectant ce schéma. Sois concis. Texte : """${text}"""`;
+                    
+                    const extractedData = await callGeminiAPI(prompt, schema);
+                    
+                    if (extractedData) {
+                        controls.nom.value = extractedData.nom || '';
+                        controls.prenom.value = extractedData.prenom || '';
+                        controls.poste.value = extractedData.poste || '';
+                        controls.description.value = extractedData.description || '';
+                        controls.competences.value = extractedData.competences || '';
+                        
+                        controls.experienceList.innerHTML = '';
+                        (extractedData.experiences || []).forEach(exp => createDynamicItem(controls.experienceList, [{ key: 'title', placeholder: 'Titre du poste' }, { key: 'meta', placeholder: 'Entreprise & Dates' }, { key: 'desc', placeholder: 'Description', type: 'textarea' }], exp));
+                        
+                        controls.formationList.innerHTML = '';
+                        (extractedData.formations || []).forEach(form => createDynamicItem(controls.formationList, [{ key: 'title', placeholder: 'Nom du diplôme' }, { key: 'meta', placeholder: 'Établissement & Année' }], form));
+
+                        updatePreview('form');
+                        showNotification("CV rempli par l'IA !", "success");
+                    }
+                });
+                
+                controls.generateMailBtn.addEventListener('click', async () => {
+                    const nomCandidat = `${controls.prenom.value} ${controls.nom.value}`.trim();
+                    const posteCandidat = controls.poste.value;
+                    const dispoCandidat = controls.qualificationDispo.value;
+                    const salaireCandidat = controls.qualificationSalaire.value;
+                    const profilCandidat = controls.description.value;
+                    const nomRecruteur = controls.bannerNom.value || "votre consultant";
+                    const posteRecruteur = controls.bannerPoste.value || "cabinet de recrutement";
+
+                    if (!nomCandidat || !posteCandidat) {
+                        showNotification("Veuillez renseigner au moins le nom, prénom et poste du candidat.", "error");
+                        return;
+                    }
+
+                    const prompt = `En tant que consultant en recrutement pour un cabinet, rédige un e-mail de vente percutant destiné à un client pour lui présenter un excellent candidat.
+                    
+                    **Ton Persona:** Tu es ${nomRecruteur}, ${posteRecruteur}. Tu es proactif, professionnel et tu connais bien ton marché.
+                    **Objectif:** Convaincre le client de l'adéquation du profil avec ses besoins potentiels et l'inciter à en savoir plus.
+                    
+                    **Informations sur le candidat à intégrer:**
+                    - Nom du candidat: ${nomCandidat}
+                    - Poste ciblé: ${posteCandidat}
+                    - Disponibilité: ${dispoCandidat || 'à discuter'}
+                    - Prétentions salariales: ${salaireCandidat || 'à discuter'}
+                    - Résumé du profil: "${profilCandidat}"
+
+                    **Structure de l'e-mail:**
+                    1.  **Objet accrocheur:** Ex: "Profil - [Poste du candidat]" ou "Opportunité: Un [Poste du candidat] pour vos équipes".
+                    2.  **Introduction:** Commence par une formule de politesse professionnelle (ex: "Bonjour,"). Mentionne que tu le contactes pour lui présenter un profil qui pourrait l'intéresser.
+                    3.  **Présentation du profil:** Met en avant les points forts du candidat en te basant sur son résumé. Sois concis et impactant. Mentionne le poste, et éventuellement une ou deux compétences clés si elles sont évidentes.
+                    4.  **Informations pratiques:** Indique sa disponibilité et ses prétentions salariales de manière professionnelle.
+                    5.  **Call to action:** Propose d'envoyer le CV complet et/ou de planifier un bref appel pour discuter plus en détail du profil.
+                    6.  **Conclusion:** Termine par une formule de politesse et ta signature (${nomRecruteur}).
+
+                    **Important:** Ne retourne QUE le texte de l'e-mail (objet inclus, sous la forme "Objet: ..."), sans aucune phrase d'introduction ou de conclusion de ta part. Le ton doit être celui d'un partenaire commercial, pas celui du candidat.`;
+
+                    const mailContent = await callGeminiAPI(prompt);
+                    if (mailContent) {
+                        controls.recruiterMailContent.value = mailContent;
+                        showNotification("E-mail de présentation client généré.", "success");
+                    }
+                });
+
+                controls.downloadPdfBtn.addEventListener('click', async () => {
+                    const filename = `CV_${controls.prenom.value}_${controls.nom.value}.pdf`.replace(/ /g, '_');
+                    document.body.classList.add('presentation-mode');
+
+                    const bannerImg = preview.bannerImg;
+                    const bannerBg = preview.bannerBgImg;
+                    const originalBannerImg = { src: bannerImg.src, style: bannerImg.style.cssText };
+                    const originalBannerBg = { src: bannerBg.src, style: bannerBg.style.cssText };
+
+                    const processImage = async (imgElement, isCircle = false) => {
+                        if (!imgElement.src || imgElement.src.startsWith('https://placehold.co')) return;
+
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        
+                        const promise = new Promise((resolve) => {
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+                                const size = Math.min(img.naturalWidth, img.naturalHeight);
+                                canvas.width = isCircle ? size : img.naturalWidth;
+                                canvas.height = isCircle ? size : img.naturalHeight;
+
+                                if (isCircle) {
+                                    ctx.beginPath();
+                                    ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                                    ctx.clip();
+                                }
+                                
+                                const hRatio = canvas.width / img.naturalWidth;
+                                const vRatio = canvas.height / img.naturalHeight;
+                                const ratio = Math.max(hRatio, vRatio);
+                                const centerShift_x = (canvas.width - img.naturalWidth * ratio) / 2;
+                                const centerShift_y = (canvas.height - img.naturalHeight * ratio) / 2;
+                                
+                                const opacity = imgElement.style.opacity || '1';
+                                const filter = imgElement.style.filter || 'none';
+                                ctx.globalAlpha = parseFloat(opacity);
+                                ctx.filter = filter;
+                                
+                                ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, centerShift_x, centerShift_y, img.naturalWidth * ratio, img.naturalHeight * ratio);
+
+                                imgElement.src = canvas.toDataURL('image/png');
+                                imgElement.style.borderRadius = '0';
+                                imgElement.style.objectFit = 'contain';
+                                imgElement.style.filter = 'none';
+                                imgElement.style.opacity = '1';
+                                resolve();
+                            };
+                            img.onerror = () => {
+                                console.error("Could not load image for PDF processing:", imgElement.src);
+                                resolve(); // Resolve anyway to not block PDF generation
+                            };
+                        });
+                        img.src = imgElement.src;
+                        return promise;
+                    };
+                    
+                    await processImage(bannerImg, true);
+                    await processImage(bannerBg, false);
+
+                    const opt = {
+                        margin: 0,
+                        filename: filename,
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2, useCORS: true, logging: false },
+                        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    html2pdf().from(preview.previewWrapper).set(opt).save().finally(() => {
+                        bannerImg.src = originalBannerImg.src;
+                        bannerImg.style.cssText = originalBannerImg.style;
+                        bannerBg.src = originalBannerBg.src;
+                        bannerBg.style.cssText = originalBannerBg.style;
+                        document.body.classList.remove('presentation-mode');
+                    });
+                });
+
+                controls.resetCvBtn.addEventListener('click', async () => {
+                    const confirmed = await showConfirmModal("Nouveau CV", "Êtes-vous sûr de vouloir réinitialiser complètement le CV ?");
+                    if (confirmed) resetCVToDefault();
+                });
+                
+                controls.togglePresentationModeBtn.addEventListener('click', () => {
+                    document.body.classList.toggle('presentation-mode');
+                    const isActive = document.body.classList.contains('presentation-mode');
+                    controls.togglePresentationModeBtn.innerHTML = `<i class="fa-solid ${isActive ? 'fa-eye-slash' : 'fa-eye'}"></i> ${isActive ? 'Quitter Présentation' : 'Mode Présentation'}`;
+                });
+                
+                controls.toggleOverflowBtn.addEventListener('click', (e) => {
+                    document.body.classList.toggle('overflow-check-active');
+                    e.currentTarget.classList.toggle('active');
+                    checkAllPagesOverflow();
+                });
+
+                controls.aiSummarizeBtn.addEventListener('click', summarizeAllExperiencesAI);
+                controls.aiSynthesizeSkillsBtn.addEventListener('click', synthesizeSkillsWithAI);
+                controls.aiLimitSkillsBtn.addEventListener('click', limitSkillsWithAI);
+                controls.anonymizeBtn.addEventListener('click', anonymizeCV);
+                controls.resetRecruiterBtn.addEventListener('click', () => { setDefaultRecruiterInfo(); updatePreview('form'); });
+                controls.addPageBtn.addEventListener('click', () => addNewPage());
+                controls.removeBannerBgBtn.addEventListener('click', () => removeBannerBackground());
+                controls.addSectionBtn.addEventListener('click', () => {
+                    const title = controls.newSectionTitleInput.value.trim();
+                    if(title) {
+                        addCustomSection(title);
+                        controls.newSectionTitleInput.value = '';
+                    } else {
+                        showNotification("Veuillez entrer un titre pour la nouvelle section.", "error");
+                    }
+                });
+                controls.sectionSuggestionSelect.addEventListener('change', (e) => {
+                    if(e.target.value) controls.newSectionTitleInput.value = e.target.value;
+                });
+                controls.fixBannerTopBtn.addEventListener('click', () => moveBannerTo('top'));
+                controls.fixBannerBottomBtn.addEventListener('click', () => moveBannerTo('bottom'));
+                controls.modularBannerBtn.addEventListener('click', () => moveBannerTo('modular'));
+                controls.addSkillLevelBtn.addEventListener('click', () => createSkillLevelItem());
+
+                document.querySelectorAll('.a4-page').forEach(setupOverflowObserver);
+            }
+            
+            // --- START THE APP ---
+            initializeAll();
+            resetCVToDefault(); // Start with a clean slate
+        });
+
+    </script>
+</body>
+</html>
