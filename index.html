@@ -1,1 +1,936 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créateur de CV Moderne - IA Intégrée</title>
+    
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- SortableJS -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .cv-page {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 0 auto 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cv-page.overflow-warning {
+            border: 3px solid #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+        
+        .section-handle {
+            position: absolute;
+            left: -30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: grab;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+        
+        .cv-section:hover .section-handle {
+            display: flex;
+        }
+        
+        .column-resizer {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: transparent;
+            cursor: col-resize;
+            z-index: 10;
+        }
+        
+        .column-resizer:hover {
+            background: #3b82f6;
+        }
+        
+        .is-resizing .column-resizer {
+            background: #3b82f6;
+        }
+        
+        .ai-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background: #10b981;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        
+        .cv-section:hover .ai-button {
+            display: flex;
+        }
+        
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: white;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.warning { background: #f59e0b; }
+        .toast.info { background: #3b82f6; }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1500;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .zoom-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 100;
+        }
+        
+        .contenteditable:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+        }
+        
+        .contenteditable:focus {
+            outline: 2px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .cv-page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+            }
+            
+            .cv-page:last-child {
+                page-break-after: avoid;
+            }
+        }
+        
+        .presentation-mode .section-handle,
+        .presentation-mode .ai-button,
+        .presentation-mode .column-resizer,
+        .presentation-mode .no-print {
+            display: none !important;
+        }
+        
+        .screen-reader-optimized {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .skill-bar {
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .skill-progress {
+            height: 100%;
+            background: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        .banner-style-elegant { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .banner-style-modern { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .banner-style-discrete { background: #f8fafc; color: #1f2937; }
+        .banner-style-card { background: white; border: 2px solid #e5e7eb; }
+        .banner-style-gradient { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .banner-style-premium { background: linear-gradient(135deg, #434343 0%, #000000 100%); }
+        .banner-style-minimal { background: white; border-bottom: 3px solid #3b82f6; }
+        .banner-style-framed { background: white; border: 3px solid #1f2937; }
+        .banner-style-topline { background: white; border-top: 5px solid #10b981; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="bg-white p-6 rounded-lg text-center">
+            <div class="spinner mx-auto mb-4"></div>
+            <p class="text-gray-600">Chargement...</p>
+        </div>
+    </div>
 
+    <!-- Top Toolbar -->
+    <div class="bg-white shadow-sm border-b no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <h1 class="text-xl font-bold text-gray-900">Créateur de CV</h1>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <button id="accessibilityBtn" class="tooltip px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors" data-tooltip="Accessibilité">
+                        <i class="fas fa-universal-access"></i>
+                    </button>
+                    
+                    <button id="exportPdfBtn" class="tooltip px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors" data-tooltip="Exporter en PDF">
+                        <i class="fas fa-file-pdf"></i>
+                    </button>
+                    
+                    <button id="shareBtn" class="tooltip px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors" data-tooltip="Partager">
+                        <i class="fas fa-share-alt"></i>
+                    </button>
+                    
+                    <button id="anonymizeBtn" class="tooltip px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors" data-tooltip="Anonymiser">
+                        <i class="fas fa-user-secret"></i>
+                    </button>
+                    
+                    <button id="newCvBtn" class="tooltip px-3 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors" data-tooltip="Nouveau CV">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    
+                    <button id="overflowDetectionBtn" class="tooltip px-3 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors" data-tooltip="Détection dépassement">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </button>
+                    
+                    <button id="presentationModeBtn" class="tooltip px-3 py-2 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors" data-tooltip="Mode présentation">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    
+                    <button id="saveBtn" class="tooltip px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors" data-tooltip="Sauvegarder">
+                        <i class="fas fa-save"></i>
+                    </button>
+                    
+                    <button id="loadBtn" class="tooltip px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors" data-tooltip="Charger">
+                        <i class="fas fa-folder-open"></i>
+                    </button>
+                    
+                    <button id="templatesBtn" class="tooltip px-3 py-2 bg-pink-500 text-white rounded hover:bg-pink-600 transition-colors" data-tooltip="Templates">
+                        <i class="fas fa-layer-group"></i>
+                    </button>
+                    
+                    <select id="aiApiSelector" class="px-3 py-2 border rounded">
+                        <option value="gemini">Gemini AI</option>
+                        <option value="chatgpt">ChatGPT</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-screen">
+        <!-- Left Sidebar -->
+        <div id="leftSidebar" class="w-80 bg-white shadow-lg no-print">
+            <!-- Tabs -->
+            <div class="flex border-b">
+                <button class="tab-btn flex-1 py-3 px-4 text-center border-b-2 border-blue-500 text-blue-600 font-medium" data-tab="ai">IA</button>
+                <button class="tab-btn flex-1 py-3 px-4 text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="content">Contenu</button>
+                <button class="tab-btn flex-1 py-3 px-4 text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="layout">Mise en Page</button>
+                <button class="tab-btn flex-1 py-3 px-4 text-center border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="banner">Bannière</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="p-4 overflow-y-auto" style="height: calc(100vh - 120px);">
+                <!-- IA Tab -->
+                <div id="aiTab" class="tab-content">
+                    <div class="space-y-6">
+                        <!-- Analyse IA -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Analyse IA</h3>
+                            <textarea id="jobOfferText" class="w-full h-32 p-3 border rounded resize-none" placeholder="Collez ici une offre d'emploi ou un CV brut..."></textarea>
+                            <div class="flex gap-2 mt-3">
+                                <button id="analyzeAndFillBtn" class="flex-1 bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">Analyser & Remplir</button>
+                                <button id="testFillBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600">Test</button>
+                                <button id="testApiBtn" class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600">Test API</button>
+                            </div>
+                        </div>
+
+                        <!-- Présentation Recruteur -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Présentation Recruteur</h3>
+                            <div class="space-y-2">
+                                <input type="text" id="availability" class="w-full p-2 border rounded" placeholder="Disponibilité">
+                                <input type="text" id="salary" class="w-full p-2 border rounded" placeholder="Prétentions salariales">
+                                <button id="generatePitchBtn" class="w-full bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600">Générer Pitch</button>
+                            </div>
+                        </div>
+
+                        <!-- Optimisation IA -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Optimisation IA</h3>
+                            <div class="space-y-2">
+                                <button id="aiLayoutOptimizationBtn" class="w-full bg-indigo-500 text-white px-3 py-2 rounded hover:bg-indigo-600">IA Layout Optimisation</button>
+                                <button id="optimizeAllBtn" class="w-full bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600">Optimiser tout le CV</button>
+                                <button id="rewriteDescriptionsBtn" class="w-full bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600">Réécrire les descriptions</button>
+                                <button id="synthesizeExperiencesBtn" class="w-full bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600">Synthétiser les expériences</button>
+                            </div>
+                        </div>
+
+                        <!-- IA Créative & Avancée -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">IA Créative & Avancée</h3>
+                            <div class="space-y-2">
+                                <button id="generateAchievementsBtn" class="w-full bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">Générer des réalisations</button>
+                                <button id="suggestSkillsBtn" class="w-full bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600">Suggérer des compétences</button>
+                                <button id="improveProfileBtn" class="w-full bg-pink-500 text-white px-3 py-2 rounded hover:bg-pink-600">Améliorer le profil</button>
+                                <button id="adaptToSectorBtn" class="w-full bg-teal-500 text-white px-3 py-2 rounded hover:bg-teal-600">Adapter au secteur</button>
+                                <button id="boostKeywordsBtn" class="w-full bg-cyan-500 text-white px-3 py-2 rounded hover:bg-cyan-600">Booster les mots-clés</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Tab -->
+                <div id="contentTab" class="tab-content hidden">
+                    <div class="space-y-6">
+                        <!-- Informations personnelles -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Informations personnelles</h3>
+                            <div class="space-y-2">
+                                <input type="text" id="firstName" class="w-full p-2 border rounded" placeholder="Prénom">
+                                <input type="text" id="lastName" class="w-full p-2 border rounded" placeholder="Nom">
+                                <input type="text" id="jobTitle" class="w-full p-2 border rounded" placeholder="Poste recherché">
+                                <input type="email" id="email" class="w-full p-2 border rounded" placeholder="Email">
+                                <input type="tel" id="phone" class="w-full p-2 border rounded" placeholder="Téléphone">
+                                <input type="text" id="address" class="w-full p-2 border rounded" placeholder="Adresse">
+                                <input type="text" id="city" class="w-full p-2 border rounded" placeholder="Ville">
+                                <input type="text" id="postalCode" class="w-full p-2 border rounded" placeholder="Code postal">
+                            </div>
+                        </div>
+
+                        <!-- Expériences professionnelles -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Expériences professionnelles</h3>
+                            <div id="experiencesList" class="space-y-3"></div>
+                            <button id="addExperienceBtn" class="w-full bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 mt-3">Ajouter une expérience</button>
+                        </div>
+
+                        <!-- Formations -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Formations & éducation</h3>
+                            <div id="educationsList" class="space-y-3"></div>
+                            <button id="addEducationBtn" class="w-full bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 mt-3">Ajouter une formation</button>
+                        </div>
+
+                        <!-- Compétences -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Compétences</h3>
+                            <div class="mb-3">
+                                <label class="block text-sm font-medium mb-2">Style d'affichage:</label>
+                                <select id="skillsStyle" class="w-full p-2 border rounded">
+                                    <option value="tags">Tags</option>
+                                    <option value="levels">Niveaux</option>
+                                    <option value="simple">Simple</option>
+                                </select>
+                            </div>
+                            <div id="skillsLevelType" class="mb-3 hidden">
+                                <label class="block text-sm font-medium mb-2">Type de jauge:</label>
+                                <select id="levelType" class="w-full p-2 border rounded">
+                                    <option value="bars">Barres</option>
+                                    <option value="dots">Points</option>
+                                    <option value="stars">Étoiles</option>
+                                </select>
+                            </div>
+                            <div id="skillsList" class="space-y-2 mb-3"></div>
+                            <div class="flex gap-2 mb-3">
+                                <button id="limitSkillsBtn" class="flex-1 bg-yellow-500 text-white px-2 py-1 rounded text-sm hover:bg-yellow-600">Limiter à 10 (IA)</button>
+                                <button id="organizeSkillsBtn" class="flex-1 bg-purple-500 text-white px-2 py-1 rounded text-sm hover:bg-purple-600">Synthétiser & organiser (IA)</button>
+                            </div>
+                            <button id="addSkillBtn" class="w-full bg-orange-500 text-white px-3 py-2 rounded hover:bg-orange-600">Ajouter une compétence</button>
+                        </div>
+
+                        <!-- Langues -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Langues</h3>
+                            <div id="languagesList" class="space-y-2 mb-3"></div>
+                            <button id="addLanguageBtn" class="w-full bg-teal-500 text-white px-3 py-2 rounded hover:bg-teal-600">Ajouter une langue</button>
+                        </div>
+
+                        <!-- Certifications -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Certifications</h3>
+                            <div id="certificationsList" class="space-y-2 mb-3"></div>
+                            <button id="addCertificationBtn" class="w-full bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600">Ajouter une certification</button>
+                        </div>
+
+                        <!-- Projets -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Projets</h3>
+                            <div id="projectsList" class="space-y-2 mb-3"></div>
+                            <button id="addProjectBtn" class="w-full bg-indigo-500 text-white px-3 py-2 rounded hover:bg-indigo-600">Ajouter un projet</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Tab -->
+                <div id="layoutTab" class="tab-content hidden">
+                    <div class="space-y-6">
+                        <!-- Layout Controls -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Disposition des colonnes</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="layout-btn p-3 border rounded hover:bg-gray-50" data-layout="1-col">
+                                    <div class="w-full h-8 bg-gray-300 rounded"></div>
+                                    <span class="text-xs mt-1 block">1 colonne</span>
+                                </button>
+                                <button class="layout-btn p-3 border rounded hover:bg-gray-50" data-layout="50-50">
+                                    <div class="flex gap-1">
+                                        <div class="flex-1 h-8 bg-gray-300 rounded"></div>
+                                        <div class="flex-1 h-8 bg-gray-300 rounded"></div>
+                                    </div>
+                                    <span class="text-xs mt-1 block">50/50</span>
+                                </button>
+                                <button class="layout-btn p-3 border rounded hover:bg-gray-50" data-layout="33-67">
+                                    <div class="flex gap-1">
+                                        <div class="w-1/3 h-8 bg-gray-300 rounded"></div>
+                                        <div class="w-2/3 h-8 bg-gray-300 rounded"></div>
+                                    </div>
+                                    <span class="text-xs mt-1 block">33/67</span>
+                                </button>
+                                <button class="layout-btn p-3 border rounded hover:bg-gray-50" data-layout="67-33">
+                                    <div class="flex gap-1">
+                                        <div class="w-2/3 h-8 bg-gray-300 rounded"></div>
+                                        <div class="w-1/3 h-8 bg-gray-300 rounded"></div>
+                                    </div>
+                                    <span class="text-xs mt-1 block">67/33</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Typography -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Typographie</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Taille de police principale</label>
+                                    <input type="range" id="fontSizeSlider" min="12" max="18" value="14" class="w-full">
+                                    <span id="fontSizeValue" class="text-sm text-gray-600">14px</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Espacement des lignes</label>
+                                    <input type="range" id="lineHeightSlider" min="1.2" max="2" step="0.1" value="1.5" class="w-full">
+                                    <span id="lineHeightValue" class="text-sm text-gray-600">1.5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colors -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Couleurs</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Couleur principale</label>
+                                    <input type="color" id="primaryColor" value="#3b82f6" class="w-full h-10 rounded">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Couleur secondaire</label>
+                                    <input type="color" id="secondaryColor" value="#6b7280" class="w-full h-10 rounded">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spacing -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Espacements</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Marges internes</label>
+                                    <input type="range" id="paddingSlider" min="10" max="40" value="20" class="w-full">
+                                    <span id="paddingValue" class="text-sm text-gray-600">20px</span>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Espacement entre sections</label>
+                                    <input type="range" id="sectionSpacingSlider" min="10" max="40" value="20" class="w-full">
+                                    <span id="sectionSpacingValue" class="text-sm text-gray-600">20px</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Banner Tab -->
+                <div id="bannerTab" class="tab-content hidden">
+                    <div class="space-y-6">
+                        <!-- Photo/Logo -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Photo/Logo</h3>
+                            <div class="space-y-3">
+                                <input type="file" id="photoUpload" accept="image/*" class="w-full p-2 border rounded">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Taille</label>
+                                    <select id="photoSize" class="w-full p-2 border rounded">
+                                        <option value="sm">SM</option>
+                                        <option value="md" selected>MD</option>
+                                        <option value="lg">LG</option>
+                                        <option value="xl">XL</option>
+                                        <option value="xxl">XXL</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alignement -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Alignement</h3>
+                            <div class="flex gap-2 mb-3">
+                                <button class="alignment-btn flex-1 p-2 border rounded hover:bg-gray-50" data-align="left">Gauche</button>
+                                <button class="alignment-btn flex-1 p-2 border rounded hover:bg-gray-50" data-align="center">Centre</button>
+                                <button class="alignment-btn flex-1 p-2 border rounded hover:bg-gray-50" data-align="right">Droite</button>
+                            </div>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="invertLayout" class="mr-2">
+                                Layout inversé
+                            </label>
+                        </div>
+
+                        <!-- Styles -->
+                        <div class="border rounded-lg p-4">
+                            <h3 class="font-semibold mb-3">Styles prêts à l'emploi</h3>
+                            <div class="space-y-2">
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="elegant">
+                                    <div class="banner-style-elegant h-6 rounded mb-1"></div>
+                                    Élégant
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="modern">
+                                    <div class="banner-style-modern h-6 rounded mb-1"></div>
+                                    Moderne
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="discrete">
+                                    <div class="banner-style-discrete h-6 rounded mb-1"></div>
+                                    Discret
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="card">
+                                    <div class="banner-style-card h-6 rounded mb-1"></div>
+                                    Carte
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="gradient">
+                                    <div class="banner-style-gradient h-6 rounded mb-1"></div>
+                                    Dégradé
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="premium">
+                                    <div class="banner-style-premium h-6 rounded mb-1"></div>
+                                    Premium
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="minimal">
+                                    <div class="banner-style-minimal h-6 rounded mb-1"></div>
+                                    Minimal
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="framed">
+                                    <div class="banner-style-framed h-6 rounded mb-1"></div>
+                                    Encadré
+                                </button>
+                                <button class="banner-style-btn w-full p-3 rounded text-left hover:bg-gray-50" data-style="topline">
+                                    <div class="banner-style-topline h-6 rounded mb-1"></div>
+                                    Ligne haute
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 overflow-auto">
+            <div class="p-6">
+                <div id="cvContainer" class="max-w-4xl mx-auto">
+                    <!-- CV Pages will be generated here -->
+                    <div class="cv-page" id="page1">
+                        <!-- Banner Section -->
+                        <div id="bannerSection" class="banner-style-elegant text-white p-6 flex items-center">
+                            <div id="photoContainer" class="w-24 h-24 rounded-full bg-white/20 mr-6 flex items-center justify-center">
+                                <i class="fas fa-user text-2xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h1 class="text-3xl font-bold contenteditable" contenteditable="true" data-field="fullName">Votre Nom</h1>
+                                <h2 class="text-xl contenteditable" contenteditable="true" data-field="jobTitle">Votre Poste</h2>
+                                <div class="mt-2 space-y-1">
+                                    <div class="contenteditable" contenteditable="true" data-field="email">email@exemple.com</div>
+                                    <div class="contenteditable" contenteditable="true" data-field="phone">+33 1 23 45 67 89</div>
+                                    <div class="contenteditable" contenteditable="true" data-field="address">Ville, Code Postal</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Content Area -->
+                        <div id="contentArea" class="flex">
+                            <!-- Left Column -->
+                            <div id="leftColumn" class="w-1/3 p-6">
+                                <!-- Profile Section -->
+                                <div class="cv-section mb-6" data-section="profile">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <div class="ai-button" data-action="improve-profile"><i class="fas fa-magic"></i></div>
+                                    <h3 class="text-lg font-semibold mb-3 text-blue-600">Profil</h3>
+                                    <p class="contenteditable text-sm leading-relaxed" contenteditable="true" data-field="profile">
+                                        Décrivez votre profil professionnel, vos objectifs et ce qui vous distingue des autres candidats...
+                                    </p>
+                                </div>
+
+                                <!-- Skills Section -->
+                                <div class="cv-section mb-6" data-section="skills">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <div class="ai-button" data-action="suggest-skills"><i class="fas fa-magic"></i></div>
+                                    <h3 class="text-lg font-semibold mb-3 text-blue-600">Compétences</h3>
+                                    <div id="skillsDisplay" class="space-y-2">
+                                        <!-- Skills will be populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- Languages Section -->
+                                <div class="cv-section mb-6" data-section="languages">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <h3 class="text-lg font-semibold mb-3 text-blue-600">Langues</h3>
+                                    <div id="languagesDisplay" class="space-y-1">
+                                        <!-- Languages will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Column Resizer -->
+                            <div class="column-resizer" style="left: 33.33%;"></div>
+
+                            <!-- Right Column -->
+                            <div id="rightColumn" class="flex-1 p-6">
+                                <!-- Experience Section -->
+                                <div class="cv-section mb-6" data-section="experience">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <div class="ai-button" data-action="rewrite-experiences"><i class="fas fa-magic"></i></div>
+                                    <h3 class="text-lg font-semibold mb-4 text-blue-600">Expérience Professionnelle</h3>
+                                    <div id="experienceDisplay" class="space-y-4">
+                                        <!-- Experiences will be populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- Education Section -->
+                                <div class="cv-section mb-6" data-section="education">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <h3 class="text-lg font-semibold mb-4 text-blue-600">Formation</h3>
+                                    <div id="educationDisplay" class="space-y-4">
+                                        <!-- Education will be populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- Certifications Section -->
+                                <div class="cv-section mb-6" data-section="certifications">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <h3 class="text-lg font-semibold mb-4 text-blue-600">Certifications</h3>
+                                    <div id="certificationsDisplay" class="space-y-2">
+                                        <!-- Certifications will be populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- Projects Section -->
+                                <div class="cv-section mb-6" data-section="projects">
+                                    <div class="section-handle"><i class="fas fa-grip-vertical"></i></div>
+                                    <h3 class="text-lg font-semibold mb-4 text-blue-600">Projets</h3>
+                                    <div id="projectsDisplay" class="space-y-4">
+                                        <!-- Projects will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add Page Button -->
+                    <div class="text-center mt-4 no-print">
+                        <button id="addPageBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            <i class="fas fa-plus mr-2"></i>Ajouter une page
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Zoom Controls -->
+    <div class="zoom-controls no-print">
+        <button id="zoomOutBtn" class="p-2 hover:bg-gray-100 rounded">
+            <i class="fas fa-minus"></i>
+        </button>
+        <input type="range" id="zoomSlider" min="50" max="150" value="100" class="mx-2">
+        <button id="zoomInBtn" class="p-2 hover:bg-gray-100 rounded">
+            <i class="fas fa-plus"></i>
+        </button>
+        <span id="zoomValue" class="ml-2 text-sm">100%</span>
+    </div>
+
+    <!-- Modals -->
+    <!-- Accessibility Modal -->
+    <div id="accessibilityModal" class="modal">
+        <div class="modal-content w-96">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Préférences d'accessibilité</h2>
+                <button class="close-modal text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Taille du texte</label>
+                    <input type="range" id="accessibilityFontSize" min="80" max="150" value="100" class="w-full">
+                    <span id="accessibilityFontSizeValue" class="text-sm text-gray-600">100%</span>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Espacement des lignes</label>
+                    <input type="range" id="accessibilityLineHeight" min="1.2" max="2" step="0.1" value="1.5" class="w-full">
+                    <span id="accessibilityLineHeightValue" class="text-sm text-gray-600">1.5</span>
+                </div>
+                
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="keyboardNavigation" class="mr-2">
+                        Focus clavier amélioré
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="reduceAnimations" class="mr-2">
+                        Réduire les animations
+                    </label>
+                </div>
+                
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="screenReaderOptimized" class="mr-2">
+                        Optimisations lecteur d'écran
+                    </label>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded">
+                    <h4 class="font-medium mb-2">Raccourcis clavier</h4>
+                    <div class="text-sm space-y-1">
+                        <div><kbd class="bg-gray-200 px-1 rounded">Ctrl+S</kbd> Sauvegarder</div>
+                        <div><kbd class="bg-gray-200 px-1 rounded">Ctrl+P</kbd> PDF</div>
+                        <div><kbd class="bg-gray-200 px-1 rounded">Échap</kbd> Fermer les modales</div>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 pt-4">
+                    <button id="resetAccessibilityBtn" class="flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Réinitialiser</button>
+                    <button id="saveAccessibilityBtn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Sauvegarder</button>
+                    <button class="close-modal flex-1 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div id="templatesModal" class="modal">
+        <div class="modal-content w-4xl max-w-4xl">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Gestion des Templates de Mise en Page</h2>
+                <button class="close-modal text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <button id="saveTemplateBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Sauvegarder la mise en page actuelle</button>
+                    <button id="exportTemplatesBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Exporter tous les templates</button>
+                    <input type="file" id="importTemplatesInput" accept=".json" class="hidden">
+                    <button id="importTemplatesBtn" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">Importer templates</button>
+                </div>
+                
+                <div id="templatesList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Templates will be populated here -->
+                </div>
+                
+                <div id="noTemplatesMessage" class="text-center text-gray-500 py-8">
+                    Aucun template sauvegardé
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Template Modal -->
+    <div id="saveTemplateModal" class="modal">
+        <div class="modal-content w-96">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Sauvegarder le Template</h2>
+                <button class="close-modal text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Nom du template</label>
+                    <input type="text" id="templateName" class="w-full p-2 border rounded" placeholder="Mon template">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Description</label>
+                    <textarea id="templateDescription" class="w-full p-2 border rounded h-20" placeholder="Description du template..."></textarea>
+                </div>
+                
+                <div class="flex gap-2 pt-4">
+                    <button class="close-modal flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Annuler</button>
+                    <button id="confirmSaveTemplateBtn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Configuration Modal -->
+    <div id="apiConfigModal" class="modal">
+        <div class="modal-content w-96">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Configuration API IA</h2>
+                <button class="close-modal text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-yellow-50 p-3 rounded">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Les clés API sont stockées localement dans votre navigateur et ne sont jamais transmises à nos serveurs.
+                    </p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Clé API Gemini</label>
+                    <input type="password" id="geminiApiKey" class="w-full p-2 border rounded" placeholder="Votre clé API Gemini">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-2">Clé API ChatGPT</label>
+                    <input type="password" id="chatgptApiKey" class="w-full p-2 border rounded" placeholder="Votre clé API OpenAI">
+                </div>
+                
+                <div class="flex gap-2 pt-4">
+                    <button class="close-modal flex-1 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Annuler</button>
+                    <button id="saveApiKeysBtn" class="flex-1 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
