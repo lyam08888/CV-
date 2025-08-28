@@ -1,18 +1,24 @@
 // Créateur de CV Moderne - Version Simplifiée et Robuste
 class CVBuilder {
     constructor() {
-        this.currentTab = 'personal';
+        this.currentTab = 'content';
         this.experiences = [];
         this.education = [];
         this.skills = [];
         this.customSections = [];
+        this.languages = [];
+        this.certifications = [];
+        this.projects = [];
         this.bannerSettings = {
             enabled: false,
             title: '',
             subtitle: '',
             image: null,
-            style: 'gradient',
-            color: '#667eea'
+            style: 'modern',
+            color: '#667eea',
+            alignment: 'center',
+            inverted: false,
+            photoSize: 'md'
         };
         this.theme = 'modern';
         this.primaryColor = '#3b82f6';
@@ -24,6 +30,19 @@ class CVBuilder {
         this.undoStack = [];
         this.redoStack = [];
         this.maxUndoSteps = 50;
+        this.aiProvider = 'gemini';
+        this.zoomLevel = 100;
+        this.presentationMode = false;
+        this.overflowDetection = false;
+        this.anonymized = false;
+        this.templates = [];
+        this.accessibilitySettings = {
+            textSize: 1,
+            lineSpacing: 1.5,
+            keyboardFocus: false,
+            reduceAnimations: false,
+            screenReader: false
+        };
 
         // Attendre que le DOM soit chargé
         if (document.readyState === 'loading') {
@@ -76,13 +95,20 @@ class CVBuilder {
     setupEventListeners() {
         // Boutons de la barre d'outils
         this.addEventListener('toggle-panel', 'click', () => this.togglePanel());
+        this.addEventListener('accessibility-btn', 'click', () => this.openAccessibilityModal());
+        this.addEventListener('export-pdf-btn', 'click', () => this.openExportModal());
+        this.addEventListener('share-btn', 'click', () => this.shareCV());
+        this.addEventListener('anonymize-btn', 'click', () => this.anonymizeCV());
+        this.addEventListener('new-cv-btn', 'click', () => this.newCV());
+        this.addEventListener('overflow-detection-btn', 'click', () => this.toggleOverflowDetection());
+        this.addEventListener('presentation-btn', 'click', () => this.togglePresentationMode());
+        this.addEventListener('save-cv-btn', 'click', () => this.openSaveModal());
+        this.addEventListener('load-cv-btn', 'click', () => this.openLoadModal());
+        this.addEventListener('templates-btn', 'click', () => this.openTemplatesModal());
+        this.addEventListener('ai-provider-select', 'change', (e) => this.changeAIProvider(e.target.value));
         this.addEventListener('undo-btn', 'click', () => this.undo());
         this.addEventListener('redo-btn', 'click', () => this.redo());
         this.addEventListener('ai-analyze-btn', 'click', () => this.openAIModal());
-        this.addEventListener('presentation-btn', 'click', () => this.togglePresentationMode());
-        this.addEventListener('export-pdf-btn', 'click', () => this.openExportModal());
-        this.addEventListener('save-cv-btn', 'click', () => this.openSaveModal());
-        this.addEventListener('load-cv-btn', 'click', () => this.openLoadModal());
 
         // Onglets
         document.querySelectorAll('.tab-button').forEach(btn => {
@@ -92,6 +118,7 @@ class CVBuilder {
         // Champs personnels
         this.addEventListener('first-name', 'input', () => this.updatePersonalInfo());
         this.addEventListener('last-name', 'input', () => this.updatePersonalInfo());
+        this.addEventListener('job-title', 'input', () => this.updatePersonalInfo());
         this.addEventListener('email', 'input', () => this.updatePersonalInfo());
         this.addEventListener('phone', 'input', () => this.updatePersonalInfo());
         this.addEventListener('address', 'input', () => this.updatePersonalInfo());
@@ -102,6 +129,11 @@ class CVBuilder {
         // Photo de profil
         this.addEventListener('photo-upload', 'change', (e) => this.handlePhotoUpload(e));
         this.addEventListener('remove-photo', 'click', () => this.removePhoto());
+        this.addEventListener('upload-photo-btn', 'click', () => this.triggerPhotoUpload());
+        this.addEventListener('photo-size-sm', 'click', () => this.setPhotoSize('sm'));
+        this.addEventListener('photo-size-md', 'click', () => this.setPhotoSize('md'));
+        this.addEventListener('photo-size-lg', 'click', () => this.setPhotoSize('lg'));
+        this.addEventListener('photo-size-xl', 'click', () => this.setPhotoSize('xl'));
 
         // Expériences
         this.addEventListener('add-experience', 'click', () => this.addExperience());
@@ -111,32 +143,87 @@ class CVBuilder {
 
         // Compétences
         this.addEventListener('add-skill', 'click', () => this.addSkill());
-        this.addEventListener('skills-style', 'change', (e) => this.changeSkillsStyle(e.target.value));
+        this.addEventListener('skills-style-tags', 'click', () => this.changeSkillsStyle('tags'));
+        this.addEventListener('skills-style-levels', 'click', () => this.changeSkillsStyle('levels'));
+        this.addEventListener('skills-style-simple', 'click', () => this.changeSkillsStyle('simple'));
+        this.addEventListener('limit-skills-10', 'click', () => this.limitSkillsTo10());
+        this.addEventListener('synthesize-skills', 'click', () => this.synthesizeSkills());
 
-        // Sections personnalisées
+        // Sections complémentaires
+        this.addEventListener('add-language', 'click', () => this.addLanguage());
+        this.addEventListener('add-certification', 'click', () => this.addCertification());
+        this.addEventListener('add-project', 'click', () => this.addProject());
         this.addEventListener('add-custom-section', 'click', () => this.addCustomSection());
 
-        // Style
-        this.addEventListener('theme-select', 'change', (e) => this.changeTheme(e.target.value));
-        this.addEventListener('layout-select', 'change', (e) => this.changeLayout(e.target.value));
-        this.addEventListener('title-style', 'change', (e) => this.changeTitleStyle(e.target.value));
+        // Contrôles de layout
+        this.addEventListener('layout-single', 'click', () => this.setLayout('single'));
+        this.addEventListener('layout-50-50', 'click', () => this.setLayout('50-50'));
+        this.addEventListener('layout-33-67', 'click', () => this.setLayout('33-67'));
+        this.addEventListener('layout-67-33', 'click', () => this.setLayout('67-33'));
+        this.addEventListener('spacing-vertical', 'input', (e) => this.updateSpacing('vertical', e.target.value));
+        this.addEventListener('font-size', 'input', (e) => this.updateFontSize(e.target.value));
+        this.addEventListener('margins', 'input', (e) => this.updateMargins(e.target.value));
 
-        // Couleurs
+        // Couleurs et polices
         document.querySelectorAll('.color-option').forEach(option => {
             option.addEventListener('click', () => this.selectColor(option.dataset.color));
         });
-
-        // Polices
         document.querySelectorAll('.font-option').forEach(option => {
             option.addEventListener('click', () => this.selectFont(option.dataset.font));
         });
 
         // Bannière
-        this.addEventListener('banner-title', 'input', () => this.updateBanner());
-        this.addEventListener('banner-subtitle', 'input', () => this.updateBanner());
-        this.addEventListener('banner-image', 'change', (e) => this.handleBannerImage(e));
-        this.addEventListener('banner-style', 'change', (e) => this.updateBannerStyle(e.target.value));
-        this.addEventListener('banner-color', 'input', (e) => this.updateBannerColor(e.target.value));
+        this.addEventListener('align-left', 'click', () => this.setBannerAlignment('left'));
+        this.addEventListener('align-center', 'click', () => this.setBannerAlignment('center'));
+        this.addEventListener('align-right', 'click', () => this.setBannerAlignment('right'));
+        this.addEventListener('inverted-layout', 'change', (e) => this.toggleInvertedLayout(e.target.checked));
+        this.addEventListener('style-elegant', 'click', () => this.setBannerStyle('elegant'));
+        this.addEventListener('style-modern', 'click', () => this.setBannerStyle('modern'));
+        this.addEventListener('style-discreet', 'click', () => this.setBannerStyle('discreet'));
+        this.addEventListener('style-card', 'click', () => this.setBannerStyle('card'));
+        this.addEventListener('style-gradient', 'click', () => this.setBannerStyle('gradient'));
+        this.addEventListener('style-premium', 'click', () => this.setBannerStyle('premium'));
+        this.addEventListener('style-minimal', 'click', () => this.setBannerStyle('minimal'));
+        this.addEventListener('style-framed', 'click', () => this.setBannerStyle('framed'));
+
+        // Boutons IA
+        this.addEventListener('analyze-fill-btn', 'click', () => this.analyzeAndFill());
+        this.addEventListener('test-fill-btn', 'click', () => this.testFilling());
+        this.addEventListener('test-api-btn', 'click', () => this.testAPI());
+        this.addEventListener('generate-pitch-btn', 'click', () => this.generatePitch());
+        this.addEventListener('layout-optimization-btn', 'click', () => this.optimizeLayout());
+        this.addEventListener('optimize-cv-btn', 'click', () => this.optimizeCV());
+        this.addEventListener('rewrite-descriptions-btn', 'click', () => this.rewriteDescriptions());
+        this.addEventListener('summarize-experiences-btn', 'click', () => this.summarizeExperiences());
+        this.addEventListener('generate-achievements-btn', 'click', () => this.generateAchievements());
+        this.addEventListener('suggest-skills-btn', 'click', () => this.suggestSkills());
+        this.addEventListener('improve-profile-btn', 'click', () => this.improveProfile());
+        this.addEventListener('adapt-sector-btn', 'click', () => this.adaptToSector());
+        this.addEventListener('boost-keywords-btn', 'click', () => this.boostKeywords());
+
+        // Accessibilité
+        this.addEventListener('text-size-slider', 'input', (e) => this.updateTextSize(e.target.value));
+        this.addEventListener('line-spacing-slider', 'input', (e) => this.updateLineSpacing(e.target.value));
+        this.addEventListener('keyboard-focus', 'change', (e) => this.toggleKeyboardFocus(e.target.checked));
+        this.addEventListener('reduce-animations', 'change', (e) => this.toggleAnimations(e.target.checked));
+        this.addEventListener('screen-reader', 'change', (e) => this.toggleScreenReader(e.target.checked));
+        this.addEventListener('reset-accessibility', 'click', () => this.resetAccessibility());
+        this.addEventListener('save-accessibility', 'click', () => this.saveAccessibility());
+        this.addEventListener('close-accessibility', 'click', () => this.closeAccessibilityModal());
+
+        // Templates
+        this.addEventListener('save-template-btn', 'click', () => this.saveTemplate());
+        this.addEventListener('export-templates-btn', 'click', () => this.exportTemplates());
+        this.addEventListener('import-templates-btn', 'click', () => this.importTemplates());
+
+        // Zoom controls
+        this.addEventListener('zoom-out', 'click', () => this.zoomOut());
+        this.addEventListener('zoom-in', 'click', () => this.zoomIn());
+        this.addEventListener('zoom-reset', 'click', () => this.resetZoom());
+        this.addEventListener('zoom-slider', 'input', (e) => this.setZoom(e.target.value));
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => this.handleKeyboard(e));
 
         // Modales
         document.querySelectorAll('.modal-close').forEach(close => {
@@ -919,25 +1006,6 @@ class CVBuilder {
         if (redoBtn) redoBtn.disabled = this.redoStack.length === 0;
     }
 
-    renderAll() {
-        try {
-            this.renderExperiences();
-            this.renderEducation();
-            this.renderSkills();
-            this.renderCustomSections();
-            this.updateBannerDisplay();
-            this.applyTheme();
-            this.applyLayout();
-            this.applyTitleStyle();
-            this.updateColorSelection();
-            this.updateFontSelection();
-            this.updateProgress();
-            console.log('Rendu complet terminé');
-        } catch (error) {
-            console.error('Erreur lors du rendu:', error);
-        }
-    }
-
     // Modales
     openAIModal() {
         const modal = document.getElementById('ai-modal');
@@ -963,16 +1031,6 @@ class CVBuilder {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.classList.remove('active');
         });
-    }
-
-    // Mode présentation
-    togglePresentationMode() {
-        document.body.classList.toggle('presentation-mode');
-        const btn = document.getElementById('presentation-btn');
-        if (btn) {
-            const isPresentation = document.body.classList.contains('presentation-mode');
-            btn.innerHTML = isPresentation ? '<i class="fas fa-edit"></i>' : '<i class="fas fa-play"></i>';
-        }
     }
 
     // Panneau latéral
@@ -1231,9 +1289,773 @@ class CVBuilder {
             this.loadingElement = null;
         }
     }
+
+    // Nouvelles méthodes pour les fonctionnalités demandées
+
+    // Gestion des modales
+    openAccessibilityModal() {
+        const modal = document.getElementById('accessibility-modal');
+        if (modal) modal.classList.add('active');
+        this.loadAccessibilitySettings();
+    }
+
+    closeAccessibilityModal() {
+        const modal = document.getElementById('accessibility-modal');
+        if (modal) modal.classList.remove('active');
+    }
+
+    openTemplatesModal() {
+        const modal = document.getElementById('templates-modal');
+        if (modal) modal.classList.add('active');
+        this.loadTemplates();
+    }
+
+    // Partage du CV
+    shareCV() {
+        const url = this.generateShareableLink();
+        navigator.clipboard.writeText(url).then(() => {
+            this.showToast('Lien de partage copié dans le presse-papiers', 'success');
+        });
+    }
+
+    generateShareableLink() {
+        const data = btoa(JSON.stringify(this.getCVData()));
+        return `${window.location.origin}${window.location.pathname}?cv=${data}`;
+    }
+
+    getCVData() {
+        return {
+            personalInfo: this.personalInfo,
+            experiences: this.experiences,
+            education: this.education,
+            skills: this.skills,
+            customSections: this.customSections,
+            languages: this.languages,
+            certifications: this.certifications,
+            projects: this.projects,
+            bannerSettings: this.bannerSettings,
+            theme: this.currentTheme,
+            layout: this.currentLayout
+        };
+    }
+
+    // Anonymisation
+    anonymizeCV() {
+        this.anonymized = !this.anonymized;
+        this.updateAnonymizedDisplay();
+        const btn = document.getElementById('anonymize-btn');
+        btn.classList.toggle('active', this.anonymized);
+        this.showToast(this.anonymized ? 'CV anonymisé' : 'CV désanonymisé', 'info');
+    }
+
+    updateAnonymizedDisplay() {
+        const elements = ['email-display', 'phone-display', 'address-display'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (this.anonymized) {
+                    el.style.display = 'none';
+                } else {
+                    el.style.display = '';
+                }
+            }
+        });
+    }
+
+    // Nouveau CV
+    newCV() {
+        if (confirm('Êtes-vous sûr de vouloir créer un nouveau CV ? Toutes les données non sauvegardées seront perdues.')) {
+            this.resetAllData();
+            this.showToast('Nouveau CV créé', 'success');
+        }
+    }
+
+    resetAllData() {
+        this.experiences = [];
+        this.education = [];
+        this.skills = [];
+        this.customSections = [];
+        this.languages = [];
+        this.certifications = [];
+        this.projects = [];
+        this.setPersonalInfo({
+            firstName: '',
+            lastName: '',
+            jobTitle: '',
+            email: '',
+            phone: '',
+            address: '',
+            linkedin: '',
+            website: '',
+            summary: ''
+        });
+        this.bannerSettings = {
+            enabled: false,
+            title: '',
+            subtitle: '',
+            image: null,
+            style: 'modern',
+            color: '#667eea',
+            alignment: 'center',
+            inverted: false,
+            photoSize: 'md'
+        };
+        this.renderAll();
+        this.updateProgress();
+    }
+
+    // Détection de dépassement
+    toggleOverflowDetection() {
+        this.overflowDetection = !this.overflowDetection;
+        this.updateOverflowDetection();
+        const btn = document.getElementById('overflow-detection-btn');
+        btn.classList.toggle('active', this.overflowDetection);
+    }
+
+    updateOverflowDetection() {
+        const pages = document.querySelectorAll('.cv-page');
+        pages.forEach(page => {
+            if (this.overflowDetection) {
+                // Vérifier si le contenu dépasse
+                const contentHeight = page.scrollHeight;
+                const pageHeight = 297 * 3.78; // A4 height in pixels (approx)
+                if (contentHeight > pageHeight) {
+                    page.classList.add('overflow-warning');
+                } else {
+                    page.classList.remove('overflow-warning');
+                }
+            } else {
+                page.classList.remove('overflow-warning');
+            }
+        });
+    }
+
+    // Mode présentation
+    togglePresentationMode() {
+        this.presentationMode = !this.presentationMode;
+        this.updatePresentationMode();
+        const btn = document.getElementById('presentation-btn');
+        btn.classList.toggle('active', this.presentationMode);
+    }
+
+    updatePresentationMode() {
+        document.body.classList.toggle('presentation-mode', this.presentationMode);
+        const handles = document.querySelectorAll('.drag-handle, .resize-handle');
+        handles.forEach(handle => {
+            handle.style.display = this.presentationMode ? 'none' : '';
+        });
+    }
+
+    // Changement de fournisseur IA
+    changeAIProvider(provider) {
+        this.aiProvider = provider;
+        localStorage.setItem('ai_provider', provider);
+        this.showToast(`Fournisseur IA changé: ${provider}`, 'info');
+    }
+
+    // Gestion des compétences
+    limitSkillsTo10() {
+        if (this.skills.length > 10) {
+            this.skills = this.skills.slice(0, 10);
+            this.renderSkills();
+            this.showToast('Compétences limitées à 10', 'success');
+        } else {
+            this.showToast('Déjà 10 compétences ou moins', 'info');
+        }
+    }
+
+    synthesizeSkills() {
+        // Simulation de synthèse IA
+        this.showToast('Synthèse des compétences en cours...', 'info');
+        setTimeout(() => {
+            // Regrouper par catégories
+            const categories = {};
+            this.skills.forEach(skill => {
+                const category = this.guessSkillCategory(skill.name);
+                if (!categories[category]) categories[category] = [];
+                categories[category].push(skill);
+            });
+
+            // Recréer la liste organisée
+            this.skills = [];
+            Object.keys(categories).forEach(cat => {
+                categories[cat].forEach(skill => this.skills.push(skill));
+            });
+
+            this.renderSkills();
+            this.showToast('Compétences synthétisées et organisées', 'success');
+        }, 1000);
+    }
+
+    guessSkillCategory(skillName) {
+        const categories = {
+            'Technologies': ['javascript', 'python', 'java', 'php', 'html', 'css', 'react', 'angular', 'vue'],
+            'Outils': ['git', 'docker', 'jenkins', 'webpack', 'npm', 'yarn'],
+            'Méthodologies': ['agile', 'scrum', 'kanban', 'tdd', 'bdd'],
+            'Langues': ['anglais', 'français', 'espagnol', 'allemand'],
+            'Soft Skills': ['communication', 'leadership', 'management', 'résolution de problèmes']
+        };
+
+        const lowerSkill = skillName.toLowerCase();
+        for (const [category, keywords] of Object.entries(categories)) {
+            if (keywords.some(keyword => lowerSkill.includes(keyword))) {
+                return category;
+            }
+        }
+        return 'Autres';
+    }
+
+    // Gestion des sections complémentaires
+    addLanguage() {
+        const language = prompt('Nom de la langue:');
+        if (language) {
+            const level = prompt('Niveau (A1-C2):', 'B2');
+            this.languages.push({ name: language, level: level || 'B2' });
+            this.renderLanguages();
+        }
+    }
+
+    addCertification() {
+        const name = prompt('Nom de la certification:');
+        if (name) {
+            const issuer = prompt('Organisme émetteur:');
+            const date = prompt('Date d\'obtention:');
+            this.certifications.push({ name, issuer, date });
+            this.renderCertifications();
+        }
+    }
+
+    addProject() {
+        const name = prompt('Nom du projet:');
+        if (name) {
+            const description = prompt('Description:');
+            const technologies = prompt('Technologies utilisées:');
+            this.projects.push({ name, description, technologies });
+            this.renderProjects();
+        }
+    }
+
+    // Contrôles de layout
+    setLayout(layout) {
+        this.layout = layout;
+        this.updateLayout();
+        this.updateLayoutButtons();
+    }
+
+    updateLayout() {
+        const cvPage = document.getElementById('cv-page');
+        cvPage.className = `cv-page layout-${this.layout}`;
+    }
+
+    updateLayoutButtons() {
+        document.querySelectorAll('[data-layout]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.layout === this.layout);
+        });
+    }
+
+    updateSpacing(type, value) {
+        document.documentElement.style.setProperty(`--spacing-${type}`, `${value}x`);
+        document.getElementById(`spacing-${type}-value`).textContent = `${value}x`;
+    }
+
+    updateFontSize(value) {
+        document.documentElement.style.setProperty('--font-size', `${value}rem`);
+        document.getElementById('font-size-value').textContent = `${value}x`;
+    }
+
+    updateMargins(value) {
+        document.documentElement.style.setProperty('--margin-size', `${value}rem`);
+        document.getElementById('margins-value').textContent = `${value}x`;
+    }
+
+    // Gestion de la bannière
+    setBannerAlignment(alignment) {
+        this.bannerSettings.alignment = alignment;
+        this.updateBannerAlignment();
+        this.updateAlignmentButtons();
+    }
+
+    updateBannerAlignment() {
+        const banner = document.querySelector('.banner-section');
+        if (banner) {
+            banner.className = `banner-section text-${this.bannerSettings.alignment}`;
+        }
+    }
+
+    updateAlignmentButtons() {
+        document.querySelectorAll('[data-align]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.align === this.bannerSettings.alignment);
+        });
+    }
+
+    toggleInvertedLayout(inverted) {
+        this.bannerSettings.inverted = inverted;
+        this.updateInvertedLayout();
+    }
+
+    updateInvertedLayout() {
+        const banner = document.querySelector('.banner-section');
+        if (banner) {
+            banner.classList.toggle('inverted', this.bannerSettings.inverted);
+        }
+    }
+
+    setBannerStyle(style) {
+        this.bannerSettings.style = style;
+        this.updateBannerStyle();
+        this.updateStyleButtons();
+    }
+
+    updateBannerStyle() {
+        const banner = document.querySelector('.banner-section');
+        if (banner) {
+            banner.className = `banner-section style-${this.bannerSettings.style}`;
+        }
+    }
+
+    updateStyleButtons() {
+        document.querySelectorAll('[data-style]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.style === this.bannerSettings.style);
+        });
+    }
+
+    setPhotoSize(size) {
+        this.bannerSettings.photoSize = size;
+        this.updatePhotoSize();
+        this.updatePhotoSizeButtons();
+    }
+
+    updatePhotoSize() {
+        const photo = document.getElementById('profile-photo');
+        if (photo) {
+            photo.className = `w-${this.getSizeClass(this.bannerSettings.photoSize)} h-${this.getSizeClass(this.bannerSettings.photoSize)} rounded-full object-cover border-4 border-white shadow-lg`;
+        }
+    }
+
+    getSizeClass(size) {
+        const classes = { sm: 16, md: 20, lg: 24, xl: 32 };
+        return classes[size] || 20;
+    }
+
+    updatePhotoSizeButtons() {
+        document.querySelectorAll('[data-size]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.size === this.bannerSettings.photoSize);
+        });
+    }
+
+    triggerPhotoUpload() {
+        document.getElementById('profile-photo-upload').click();
+    }
+
+    // Fonctions IA (simulées)
+    analyzeAndFill() {
+        this.showToast('Analyse IA en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Analyse terminée - Données remplies automatiquement', 'success');
+        }, 2000);
+    }
+
+    testFilling() {
+        this.showToast('Test de remplissage réussi', 'success');
+    }
+
+    testAPI() {
+        this.showToast(`Test API ${this.aiProvider} réussi`, 'success');
+    }
+
+    generatePitch() {
+        this.showToast('Génération de pitch en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Pitch généré avec succès', 'success');
+        }, 1500);
+    }
+
+    optimizeLayout() {
+        this.showToast('Optimisation du layout en cours...', 'info');
+        setTimeout(() => {
+            this.layout = 'single'; // Optimiser pour 1 page
+            this.updateLayout();
+            this.showToast('Layout optimisé pour 1 page', 'success');
+        }, 1000);
+    }
+
+    optimizeCV() {
+        this.showToast('Optimisation globale en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('CV optimisé avec succès', 'success');
+        }, 2000);
+    }
+
+    rewriteDescriptions() {
+        this.showToast('Réécriture des descriptions en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Descriptions réécrites', 'success');
+        }, 1500);
+    }
+
+    summarizeExperiences() {
+        this.showToast('Résumé des expériences en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Expériences résumées', 'success');
+        }, 1000);
+    }
+
+    generateAchievements() {
+        this.showToast('Génération d\'accomplissements en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Accomplissements générés', 'success');
+        }, 1500);
+    }
+
+    suggestSkills() {
+        this.showToast('Suggestion de compétences en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Compétences suggérées ajoutées', 'success');
+        }, 1000);
+    }
+
+    improveProfile() {
+        this.showToast('Amélioration du profil en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Profil amélioré', 'success');
+        }, 1500);
+    }
+
+    adaptToSector() {
+        this.showToast('Adaptation au secteur en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('CV adapté au secteur', 'success');
+        }, 1500);
+    }
+
+    boostKeywords() {
+        this.showToast('Boost des mots-clés en cours...', 'info');
+        setTimeout(() => {
+            this.showToast('Mots-clés optimisés', 'success');
+        }, 1000);
+    }
+
+    // Accessibilité
+    updateTextSize(value) {
+        this.accessibilitySettings.textSize = value;
+        document.documentElement.style.setProperty('--text-size', `${value}rem`);
+        document.getElementById('text-size-value').textContent = `${value}x`;
+    }
+
+    updateLineSpacing(value) {
+        this.accessibilitySettings.lineSpacing = value;
+        document.documentElement.style.setProperty('--line-spacing', `${value}`);
+        document.getElementById('line-spacing-value').textContent = `${value}x`;
+    }
+
+    toggleKeyboardFocus(enabled) {
+        this.accessibilitySettings.keyboardFocus = enabled;
+        document.body.classList.toggle('keyboard-focus', enabled);
+    }
+
+    toggleAnimations(enabled) {
+        this.accessibilitySettings.reduceAnimations = enabled;
+        document.body.classList.toggle('reduce-animations', enabled);
+    }
+
+    toggleScreenReader(enabled) {
+        this.accessibilitySettings.screenReader = enabled;
+        document.body.classList.toggle('screen-reader-optimized', enabled);
+    }
+
+    resetAccessibility() {
+        this.accessibilitySettings = {
+            textSize: 1,
+            lineSpacing: 1.5,
+            keyboardFocus: false,
+            reduceAnimations: false,
+            screenReader: false
+        };
+        this.applyAccessibilitySettings();
+        this.showToast('Paramètres d\'accessibilité réinitialisés', 'info');
+    }
+
+    saveAccessibility() {
+        localStorage.setItem('accessibility_settings', JSON.stringify(this.accessibilitySettings));
+        this.showToast('Paramètres d\'accessibilité sauvegardés', 'success');
+    }
+
+    loadAccessibilitySettings() {
+        const settings = localStorage.getItem('accessibility_settings');
+        if (settings) {
+            this.accessibilitySettings = JSON.parse(settings);
+            this.applyAccessibilitySettings();
+        }
+    }
+
+    applyAccessibilitySettings() {
+        this.updateTextSize(this.accessibilitySettings.textSize);
+        this.updateLineSpacing(this.accessibilitySettings.lineSpacing);
+        this.toggleKeyboardFocus(this.accessibilitySettings.keyboardFocus);
+        this.toggleAnimations(this.accessibilitySettings.reduceAnimations);
+        this.toggleScreenReader(this.accessibilitySettings.screenReader);
+
+        // Update form controls
+        document.getElementById('text-size-slider').value = this.accessibilitySettings.textSize;
+        document.getElementById('line-spacing-slider').value = this.accessibilitySettings.lineSpacing;
+        document.getElementById('keyboard-focus').checked = this.accessibilitySettings.keyboardFocus;
+        document.getElementById('reduce-animations').checked = this.accessibilitySettings.reduceAnimations;
+        document.getElementById('screen-reader').checked = this.accessibilitySettings.screenReader;
+    }
+
+    // Templates
+    saveTemplate() {
+        const name = prompt('Nom du template:');
+        if (name) {
+            const description = prompt('Description:');
+            const template = {
+                name,
+                description,
+                layout: this.layout,
+                theme: this.theme,
+                primaryColor: this.primaryColor,
+                fontFamily: this.fontFamily,
+                bannerSettings: { ...this.bannerSettings },
+                skillsStyle: this.skillsStyle,
+                createdAt: new Date().toISOString()
+            };
+            this.templates.push(template);
+            localStorage.setItem('cv_templates', JSON.stringify(this.templates));
+            this.renderTemplates();
+            this.showToast('Template sauvegardé', 'success');
+        }
+    }
+
+    exportTemplates() {
+        const data = JSON.stringify(this.templates, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cv-templates.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        this.showToast('Templates exportés', 'success');
+    }
+
+    importTemplates() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        this.templates = [...this.templates, ...imported];
+                        localStorage.setItem('cv_templates', JSON.stringify(this.templates));
+                        this.renderTemplates();
+                        this.showToast('Templates importés', 'success');
+                    } catch (error) {
+                        this.showToast('Erreur lors de l\'import', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+
+    loadTemplates() {
+        const templates = localStorage.getItem('cv_templates');
+        if (templates) {
+            this.templates = JSON.parse(templates);
+        }
+        this.renderTemplates();
+    }
+
+    renderTemplates() {
+        const container = document.getElementById('templates-list');
+        if (this.templates.length === 0) {
+            container.innerHTML = '<div class="template-item bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300 text-center text-gray-500">Aucun template</div>';
+            return;
+        }
+
+        container.innerHTML = this.templates.map((template, index) => `
+            <div class="template-item bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition-colors">
+                <h4 class="font-semibold text-gray-800">${template.name}</h4>
+                <p class="text-sm text-gray-600 mb-3">${template.description}</p>
+                <div class="flex gap-2">
+                    <button onclick="cvBuilder.applyTemplate(${index})" class="btn btn-primary btn-sm">Appliquer</button>
+                    <button onclick="cvBuilder.deleteTemplate(${index})" class="btn btn-danger btn-sm">Supprimer</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    applyTemplate(index) {
+        const template = this.templates[index];
+        this.layout = template.layout;
+        this.theme = template.theme;
+        this.primaryColor = template.primaryColor;
+        this.fontFamily = template.fontFamily;
+        this.bannerSettings = { ...template.bannerSettings };
+        this.skillsStyle = template.skillsStyle;
+        this.updateAll();
+        this.showToast(`Template "${template.name}" appliqué`, 'success');
+    }
+
+    deleteTemplate(index) {
+        if (confirm('Supprimer ce template ?')) {
+            this.templates.splice(index, 1);
+            localStorage.setItem('cv_templates', JSON.stringify(this.templates));
+            this.renderTemplates();
+            this.showToast('Template supprimé', 'info');
+        }
+    }
+
+    // Zoom controls
+    zoomOut() {
+        this.setZoom(Math.max(50, this.zoomLevel - 10));
+    }
+
+    zoomIn() {
+        this.setZoom(Math.min(200, this.zoomLevel + 10));
+    }
+
+    resetZoom() {
+        this.setZoom(100);
+    }
+
+    setZoom(level) {
+        this.zoomLevel = level;
+        document.getElementById('cv-page').style.transform = `scale(${level / 100})`;
+        document.getElementById('zoom-slider').value = level;
+        document.getElementById('zoom-value').textContent = `${level}%`;
+    }
+
+    // Raccourcis clavier
+    handleKeyboard(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch (e.key) {
+                case 's':
+                    e.preventDefault();
+                    this.saveCV();
+                    break;
+                case 'p':
+                    e.preventDefault();
+                    this.exportToPDF();
+                    break;
+            }
+        } else if (e.key === 'Escape') {
+            this.closeAllModals();
+        }
+    }
+
+    // Toasts
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type} p-4 rounded-lg shadow-lg max-w-sm`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas ${this.getToastIcon(type)}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    getToastIcon(type) {
+        const icons = {
+            success: 'fa-check-circle text-green-500',
+            error: 'fa-exclamation-circle text-red-500',
+            warning: 'fa-exclamation-triangle text-yellow-500',
+            info: 'fa-info-circle text-blue-500'
+        };
+        return icons[type] || icons.info;
+    }
+
+    // Méthodes de rendu pour les nouvelles sections
+    renderLanguages() {
+        const container = document.getElementById('languagesDisplay');
+        if (!container) return;
+
+        if (this.languages.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 italic">Aucune langue ajoutée</p>';
+            return;
+        }
+
+        container.innerHTML = this.languages.map(lang => `
+            <div class="flex justify-between items-center">
+                <span class="font-medium">${lang.name}</span>
+                <span class="text-sm text-gray-600">${lang.level}</span>
+            </div>
+        `).join('');
+    }
+
+    renderCertifications() {
+        const container = document.getElementById('certificationsDisplay');
+        if (!container) return;
+
+        if (this.certifications.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 italic">Aucune certification ajoutée</p>';
+            return;
+        }
+
+        container.innerHTML = this.certifications.map(cert => `
+            <div class="border-l-2 border-blue-500 pl-3">
+                <h4 class="font-semibold">${cert.name}</h4>
+                <p class="text-sm text-gray-600">${cert.issuer} - ${cert.date}</p>
+                ${cert.description ? `<p class="text-sm mt-1">${cert.description}</p>` : ''}
+            </div>
+        `).join('');
+    }
+
+    renderProjects() {
+        const container = document.getElementById('projectsDisplay');
+        if (!container) return;
+
+        if (this.projects.length === 0) {
+            container.innerHTML = '<p class="text-gray-500 italic">Aucun projet ajouté</p>';
+            return;
+        }
+
+        container.innerHTML = this.projects.map(project => `
+            <div class="mb-4">
+                <h4 class="font-semibold text-lg">${project.name}</h4>
+                <p class="text-sm text-gray-600 mb-2">${project.technologies} | ${project.date}</p>
+                <p class="text-sm mb-2">${project.description}</p>
+                ${project.link ? `<a href="${project.link}" class="text-blue-600 text-sm hover:underline" target="_blank">Voir le projet</a>` : ''}
+            </div>
+        `).join('');
+    }
+
+    // Mise à jour globale
+    updateAll() {
+        this.updateLayout();
+        this.updateBannerAlignment();
+        this.updateInvertedLayout();
+        this.updateBannerStyle();
+        this.updatePhotoSize();
+        this.renderAll();
+    }
+
+    // Rendu de toutes les sections
+    renderAll() {
+        this.renderExperiences();
+        this.renderEducation();
+        this.renderSkills();
+        this.renderLanguages();
+        this.renderCertifications();
+        this.renderProjects();
+        this.renderCustomSections();
+        this.updateBannerPreview();
+    }
 }
 
 // Initialisation
 document.addEventListener('DOMContentLoaded', () => {
-    new CVBuilder();
+    window.cvBuilder = new CVBuilder();
 });

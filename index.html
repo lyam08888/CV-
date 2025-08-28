@@ -2100,6 +2100,45 @@
         .sortable-chosen {
             opacity: 1;
         }
+
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .toast-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
         
         .cv-builder {
             display: flex;
@@ -2515,7 +2554,7 @@
         <!-- Top Toolbar -->
         <div class="top-toolbar">
             <div class="flex items-center gap-4">
-                <button id="toggle-panel" class="btn btn-secondary icon-btn" title="Masquer/Afficher le panneau">
+                <button id="toggle-panel" class="btn btn-secondary icon-btn" title="Masquer/Afficher le panneau latéral">
                     <i class="fas fa-bars"></i>
                 </button>
                 <h1 class="text-lg font-bold text-gray-800">Créateur de CV Moderne</h1>
@@ -2525,31 +2564,43 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <button id="undo-btn" class="btn btn-secondary icon-btn" title="Annuler" disabled>
-                    <i class="fas fa-undo"></i>
+                <button id="accessibility-btn" class="btn btn-secondary icon-btn" title="ACCESSIBILITÉ — ouvre la fenêtre de préférences d'accessibilité (contraste, taille de texte, navigation clavier, etc.)">
+                    <i class="fas fa-universal-access"></i>
                 </button>
-                <button id="redo-btn" class="btn btn-secondary icon-btn" title="Rétablir" disabled>
-                    <i class="fas fa-redo"></i>
+                <button id="export-pdf-btn" class="btn btn-success icon-btn" title="PDF — exporte le CV en PDF haute qualité (via html2pdf.js), adapté à l'impression et à l'envoi">
+                    <i class="fas fa-file-pdf"></i>
                 </button>
-                <button id="ai-analyze-btn" class="btn btn-primary" title="Analyser avec IA">
-                    <i class="fas fa-brain"></i>
-                    Analyser CV
+                <button id="share-btn" class="btn btn-secondary icon-btn" title="PARTAGER — crée un lien de partage web du CV (version consultable)">
+                    <i class="fas fa-share-alt"></i>
                 </button>
-                <button id="presentation-btn" class="btn btn-secondary icon-btn" title="Mode présentation">
+                <button id="anonymize-btn" class="btn btn-secondary icon-btn" title="ANONYMISER — masque temporairement les infos perso (nom, email, téléphone) pour une version anonyme">
+                    <i class="fas fa-user-secret"></i>
+                </button>
+                <button id="new-cv-btn" class="btn btn-danger icon-btn" title="NOUVEAU CV — réinitialise tout et repart d'une base vierge">
+                    <i class="fas fa-plus"></i>
+                </button>
+                <button id="overflow-detection-btn" class="btn btn-secondary icon-btn" title="DÉTECTION DÉPASSEMENT — surligne les pages qui débordent (aide à la mise en page)">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </button>
+                <button id="presentation-btn" class="btn btn-secondary icon-btn" title="MODE PRÉSENTATION — masque tous les éléments d'édition pour une vue propre">
                     <i class="fas fa-play"></i>
                 </button>
-                <button id="export-pdf-btn" class="btn btn-success">
-                    <i class="fas fa-download"></i>
-                    Exporter PDF
-                </button>
-                <button id="save-cv-btn" class="btn btn-secondary">
+                <button id="save-cv-btn" class="btn btn-secondary icon-btn" title="SAUVEGARDER — enregistre le CV localement dans le navigateur">
                     <i class="fas fa-save"></i>
-                    Sauvegarder
                 </button>
-                <button id="load-cv-btn" class="btn btn-secondary">
+                <button id="load-cv-btn" class="btn btn-secondary icon-btn" title="CHARGER — recharge la dernière sauvegarde locale">
                     <i class="fas fa-folder-open"></i>
-                    Charger
                 </button>
+                <button id="templates-btn" class="btn btn-secondary icon-btn" title="TEMPLATES — ouvre le gestionnaire de templates de mises en page">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <div class="flex items-center gap-2 ml-4">
+                    <label class="text-sm text-gray-600">IA:</label>
+                    <select id="ai-provider-select" class="control-input text-sm" style="width: auto; padding: 4px 8px;" title="Sélecteur d'API IA (Gemini / ChatGPT) — affiche la configuration et précise que les clés sont stockées localement ; tu peux basculer de l'un à l'autre">
+                        <option value="gemini">Gemini</option>
+                        <option value="chatgpt">ChatGPT</option>
+                    </select>
+                </div>
             </div>
         </div>
         
@@ -2558,61 +2609,143 @@
             <div class="p-4">
                 <!-- Tabs -->
                 <div class="flex border-b border-gray-200 mb-4">
-                    <button class="tab-button active" data-tab="personal">
-                        <i class="fas fa-user mr-2"></i>
-                        Personnel
+                    <button class="tab-button active" data-tab="ia" title="Onglet IA — Analyse IA, Présentation Recruteur, Optimisation IA">
+                        <i class="fas fa-brain mr-2"></i>
+                        IA
                     </button>
-                    <button class="tab-button" data-tab="experience">
-                        <i class="fas fa-briefcase mr-2"></i>
-                        Expérience
+                    <button class="tab-button" data-tab="content" title="Onglet Contenu — Informations personnelles, Expériences, Formations, Compétences">
+                        <i class="fas fa-edit mr-2"></i>
+                        Contenu
                     </button>
-                    <button class="tab-button" data-tab="education">
-                        <i class="fas fa-graduation-cap mr-2"></i>
-                        Formation
+                    <button class="tab-button" data-tab="layout" title="Onglet Mise en Page — Contrôles avancés de layout, réglages">
+                        <i class="fas fa-columns mr-2"></i>
+                        Mise en Page
                     </button>
-                    <button class="tab-button" data-tab="skills">
-                        <i class="fas fa-star mr-2"></i>
-                        Compétences
-                    </button>
-                    <button class="tab-button" data-tab="custom">
-                        <i class="fas fa-plus mr-2"></i>
-                        Personnalisé
-                    </button>
-                    <button class="tab-button" data-tab="style">
-                        <i class="fas fa-palette mr-2"></i>
-                        Style
+                    <button class="tab-button" data-tab="banner" title="Onglet Bannière — Photo/logo, alignements, styles">
+                        <i class="fas fa-image mr-2"></i>
+                        Bannière
                     </button>
                 </div>
                 
                 <!-- Tab Contents -->
-                <div id="tab-personal" class="tab-content active">
-                    <div class="control-group">
-                        <label class="control-label">Informations Personnelles</label>
-                        <input type="text" id="first-name" class="control-input" placeholder="Prénom">
-                        <input type="text" id="last-name" class="control-input" placeholder="Nom" style="margin-top: 8px;">
-                        <input type="email" id="email" class="control-input" placeholder="Email" style="margin-top: 8px;">
-                        <input type="tel" id="phone" class="control-input" placeholder="Téléphone" style="margin-top: 8px;">
-                        <input type="text" id="address" class="control-input" placeholder="Adresse" style="margin-top: 8px;">
-                        <input type="url" id="linkedin" class="control-input" placeholder="LinkedIn" style="margin-top: 8px;">
-                        <input type="url" id="website" class="control-input" placeholder="Site web" style="margin-top: 8px;">
-                        <textarea id="summary" class="control-input control-textarea" placeholder="Résumé professionnel" style="margin-top: 8px;"></textarea>
+                <div id="tab-ia" class="tab-content active">
+                    <!-- A. Analyse IA -->
+                    <div class="control-group mb-6">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-search text-blue-500"></i>
+                            Analyse IA
+                        </label>
+                        <textarea id="job-description" placeholder="Collez ici une offre d'emploi ou un CV brut..." class="control-input control-textarea mb-3" rows="4"></textarea>
+                        <div class="flex gap-2">
+                            <button id="analyze-fill-btn" class="btn btn-primary flex-1" title="Analyser & Remplir — extrait et remplit auto les sections (expériences, formations, compétences)">
+                                <i class="fas fa-magic"></i>
+                                Analyser & Remplir
+                            </button>
+                            <button id="test-fill-btn" class="btn btn-secondary" title="Test Remplissage — bouton de test">
+                                <i class="fas fa-flask"></i>
+                                Test
+                            </button>
+                            <button id="test-api-btn" class="btn btn-secondary" title="Test API — vérifie l'appel IA">
+                                <i class="fas fa-plug"></i>
+                                API
+                            </button>
+                        </div>
                     </div>
-                    
+
+                    <!-- B. Présentation Recruteur -->
+                    <div class="control-group mb-6">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-user-tie text-green-500"></i>
+                            Présentation Recruteur
+                        </label>
+                        <input type="text" id="availability" class="control-input mb-2" placeholder="Disponibilité (ex: Immédiate, 1 mois)">
+                        <input type="text" id="salary-expectation" class="control-input mb-2" placeholder="Prétentions salariales">
+                        <input type="text" id="location-preference" class="control-input mb-2" placeholder="Localisation préférée">
+                        <button id="generate-pitch-btn" class="btn btn-success w-full" title="Générer un pitch recruteur cohérent avec les critères">
+                            <i class="fas fa-comments"></i>
+                            Générer Pitch
+                        </button>
+                    </div>
+
+                    <!-- C. Optimisation IA -->
+                    <div class="control-group mb-6">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-wrench text-purple-500"></i>
+                            Optimisation IA (layout & contenu)
+                        </label>
+                        <button id="layout-optimization-btn" class="btn btn-primary w-full mb-2" title="IA Layout Optimisation — optimise automatiquement layout (1/2 colonnes), tailles de police, marges/espacements, bannière… pour tenir sur 1 page">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                            IA Layout Optimisation
+                        </button>
+                        <button id="optimize-cv-btn" class="btn btn-success w-full mb-2" title="Optimiser tout le CV — amélioration globale (structure, orthographe, pertinence)">
+                            <i class="fas fa-star"></i>
+                            Optimiser tout le CV
+                        </button>
+                        <button id="rewrite-descriptions-btn" class="btn btn-secondary w-full mb-2" title="Réécrire les descriptions — reformulation pro de toutes les expériences">
+                            <i class="fas fa-edit"></i>
+                            Réécrire les descriptions
+                        </button>
+                        <button id="summarize-experiences-btn" class="btn btn-secondary w-full" title="Synthétiser les expériences — condense chaque expérience (max ~5 lignes)">
+                            <i class="fas fa-compress"></i>
+                            Synthétiser les expériences
+                        </button>
+                    </div>
+
+                    <!-- D. IA Créative & Avancée -->
                     <div class="control-group">
-                        <label class="control-label">Photo de profil</label>
-                        <input type="file" id="photo-upload" accept="image/*" class="control-input">
-                        <button id="remove-photo" class="btn btn-danger btn-sm" style="margin-top: 8px;">
-                            <i class="fas fa-trash"></i>
-                            Supprimer photo
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-lightbulb text-yellow-500"></i>
+                            IA Créative & Avancée
+                        </label>
+                        <button id="generate-achievements-btn" class="btn btn-primary w-full mb-2" title="Générer des réalisations — produit des bullets d'accomplissements percutants">
+                            <i class="fas fa-trophy"></i>
+                            Générer des réalisations
+                        </button>
+                        <button id="suggest-skills-btn" class="btn btn-secondary w-full mb-2" title="Suggérer des compétences — propose des skills pertinents selon le profil/marché">
+                            <i class="fas fa-brain"></i>
+                            Suggérer des compétences
+                        </button>
+                        <button id="improve-profile-btn" class="btn btn-secondary w-full mb-2" title="Améliorer le profil — rédige un résumé accrocheur adapté au poste visé">
+                            <i class="fas fa-user-edit"></i>
+                            Améliorer le profil
+                        </button>
+                        <button id="adapt-sector-btn" class="btn btn-secondary w-full mb-2" title="Adapter au secteur — ajuste vocabulaire/compétences au secteur et niveau d'expérience choisis">
+                            <i class="fas fa-industry"></i>
+                            Adapter au secteur
+                        </button>
+                        <button id="boost-keywords-btn" class="btn btn-secondary w-full" title="Booster les mots-clés — injecte les mots-clés attendus par les recruteurs du secteur">
+                            <i class="fas fa-key"></i>
+                            Booster les mots-clés
                         </button>
                     </div>
                 </div>
                 
-                <div id="tab-experience" class="tab-content">
-                    <div class="control-group">
+                <div id="tab-content" class="tab-content">
+                    <!-- A. Informations personnelles -->
+                    <div class="control-group mb-6">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-user text-blue-500"></i>
+                            Informations personnelles
+                        </label>
+                        <input type="text" id="first-name" class="control-input mb-2" placeholder="Prénom">
+                        <input type="text" id="last-name" class="control-input mb-2" placeholder="Nom">
+                        <input type="text" id="job-title" class="control-input mb-2" placeholder="Poste recherché">
+                        <input type="email" id="email" class="control-input mb-2" placeholder="Email">
+                        <input type="tel" id="phone" class="control-input mb-2" placeholder="Téléphone">
+                        <input type="text" id="address" class="control-input mb-2" placeholder="Adresse/ville/CP">
+                        <input type="url" id="linkedin" class="control-input mb-2" placeholder="LinkedIn">
+                        <input type="url" id="website" class="control-input mb-2" placeholder="Site web">
+                        <textarea id="summary" class="control-input control-textarea" placeholder="Résumé professionnel" rows="3"></textarea>
+                    </div>
+
+                    <!-- B. Expériences professionnelles -->
+                    <div class="control-group mb-6">
                         <div class="flex justify-between items-center mb-4">
-                            <label class="control-label">Expériences Professionnelles</label>
-                            <button id="add-experience" class="btn btn-primary btn-sm">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-briefcase text-green-500"></i>
+                                Expériences professionnelles
+                            </label>
+                            <button id="add-experience" class="btn btn-primary btn-sm" title="Ajouter une expérience">
                                 <i class="fas fa-plus"></i>
                                 Ajouter
                             </button>
@@ -2621,13 +2754,15 @@
                             <!-- Experiences will be added here -->
                         </div>
                     </div>
-                </div>
-                
-                <div id="tab-education" class="tab-content">
-                    <div class="control-group">
+
+                    <!-- C. Formations & éducation -->
+                    <div class="control-group mb-6">
                         <div class="flex justify-between items-center mb-4">
-                            <label class="control-label">Formation</label>
-                            <button id="add-education" class="btn btn-primary btn-sm">
+                            <label class="control-label flex items-center gap-2">
+                                <i class="fas fa-graduation-cap text-purple-500"></i>
+                                Formations & éducation
+                            </label>
+                            <button id="add-education" class="btn btn-primary btn-sm" title="Ajouter une formation">
                                 <i class="fas fa-plus"></i>
                                 Ajouter
                             </button>
@@ -2636,46 +2771,157 @@
                             <!-- Education will be added here -->
                         </div>
                     </div>
-                </div>
-                
-                <div id="tab-skills" class="tab-content">
-                    <div class="control-group">
-                        <label class="control-label">Style des compétences</label>
-                        <select id="skills-style" class="control-input">
-                            <option value="tags">Tags</option>
-                            <option value="levels">Niveaux</option>
-                            <option value="simple">Simple</option>
-                        </select>
-                    </div>
-                    
-                    <div class="control-group">
+
+                    <!-- D. Compétences -->
+                    <div class="control-group mb-6">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-star text-yellow-500"></i>
+                            Compétences
+                        </label>
+                        <div class="mb-4">
+                            <label class="text-sm text-gray-600 mb-2 block">Styles :</label>
+                            <div class="flex gap-2">
+                                <button id="skills-style-tags" class="btn btn-secondary btn-sm active" data-style="tags" title="Tags — affichage en étiquettes">Tags</button>
+                                <button id="skills-style-levels" class="btn btn-secondary btn-sm" data-style="levels" title="Niveaux — affichage avec barres de progression">Niveaux</button>
+                                <button id="skills-style-simple" class="btn btn-secondary btn-sm" data-style="simple" title="Simple — liste simple">Simple</button>
+                            </div>
+                        </div>
                         <div class="flex justify-between items-center mb-4">
-                            <label class="control-label">Compétences</label>
-                            <button id="add-skill" class="btn btn-primary btn-sm">
+                            <span class="text-sm text-gray-600">Compétences</span>
+                            <button id="add-skill" class="btn btn-primary btn-sm" title="Ajouter une compétence">
                                 <i class="fas fa-plus"></i>
                                 Ajouter
                             </button>
                         </div>
-                        <div id="skills-list" class="space-y-2">
+                        <div id="skills-list" class="space-y-2 mb-4">
                             <!-- Skills will be added here -->
                         </div>
+                        <div class="space-y-2">
+                            <button id="limit-skills-10" class="btn btn-secondary w-full" title="Limiter à 10 (IA) — sélectionne automatiquement les 10 skills les plus pertinentes">
+                                <i class="fas fa-cut"></i>
+                                Limiter à 10 (IA)
+                            </button>
+                            <button id="synthesize-skills" class="btn btn-secondary w-full" title="Synthétiser & organiser (IA) — supprime doublons, regroupe par catégories et réordonne">
+                                <i class="fas fa-sitemap"></i>
+                                Synthétiser & organiser (IA)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- E. Langues / Certifications / Projets… -->
+                    <div class="control-group">
+                        <label class="control-label flex items-center gap-2 mb-3">
+                            <i class="fas fa-plus-circle text-indigo-500"></i>
+                            Sections complémentaires
+                        </label>
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <button id="add-language" class="btn btn-secondary btn-sm" title="Ajouter une langue">
+                                <i class="fas fa-language"></i>
+                                Langue
+                            </button>
+                            <button id="add-certification" class="btn btn-secondary btn-sm" title="Ajouter une certification">
+                                <i class="fas fa-certificate"></i>
+                                Certification
+                            </button>
+                            <button id="add-project" class="btn btn-secondary btn-sm" title="Ajouter un projet">
+                                <i class="fas fa-project-diagram"></i>
+                                Projet
+                            </button>
+                            <button id="add-custom-section" class="btn btn-secondary btn-sm" title="Ajouter une section personnalisée">
+                                <i class="fas fa-plus"></i>
+                                Personnalisé
+                            </button>
+                        </div>
+                        <div id="additional-sections" class="space-y-4">
+                            <!-- Additional sections will be added here -->
+                        </div>
                     </div>
                 </div>
                 
-                <div id="tab-custom" class="tab-content">
-                    <div class="control-group">
-                        <div class="flex justify-between items-center mb-6">
-                            <label class="control-label flex items-center gap-2">
-                                <i class="fas fa-plus-circle text-purple-500"></i>
-                                Sections Personnalisées
+                <div id="tab-banner" class="tab-content">
+                    <div class="space-y-6">
+                        <!-- Photo/logo rond -->
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2 mb-3">
+                                <i class="fas fa-image text-blue-500"></i>
+                                Photo de profil / Logo
                             </label>
-                            <button id="add-custom-section" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i>
-                                Ajouter
+                            <div class="flex items-center gap-4 mb-4">
+                                <div class="relative">
+                                    <div id="profile-photo-preview" class="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                                        <i class="fas fa-user text-gray-400 text-2xl"></i>
+                                    </div>
+                                    <input type="file" id="profile-photo-upload" accept="image/*" class="hidden">
+                                    <button id="upload-photo-btn" class="absolute -bottom-2 -right-2 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm" title="Changer la photo">
+                                        <i class="fas fa-camera"></i>
+                                    </button>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="photo-size-sm" class="btn btn-secondary btn-sm" data-size="sm" title="Taille SM">SM</button>
+                                    <button id="photo-size-md" class="btn btn-secondary btn-sm active" data-size="md" title="Taille MD">MD</button>
+                                    <button id="photo-size-lg" class="btn btn-secondary btn-sm" data-size="lg" title="Taille LG">LG</button>
+                                    <button id="photo-size-xl" class="btn btn-secondary btn-sm" data-size="xl" title="Taille XL">XL</button>
+                                </div>
+                            </div>
+                            <button id="remove-profile-photo" class="btn btn-danger btn-sm" title="Supprimer la photo">
+                                <i class="fas fa-trash"></i>
+                                Supprimer
                             </button>
                         </div>
-                        <div id="custom-sections-list" class="space-y-4">
-                            <!-- Custom sections will be added here -->
+
+                        <!-- Alignements -->
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2 mb-3">
+                                <i class="fas fa-align-center text-green-500"></i>
+                                Alignement
+                            </label>
+                            <div class="flex gap-2">
+                                <button id="align-left" class="btn btn-secondary btn-sm" data-align="left" title="Alignement à gauche">
+                                    <i class="fas fa-align-left"></i>
+                                </button>
+                                <button id="align-center" class="btn btn-secondary btn-sm active" data-align="center" title="Alignement centré">
+                                    <i class="fas fa-align-center"></i>
+                                </button>
+                                <button id="align-right" class="btn btn-secondary btn-sm" data-align="right" title="Alignement à droite">
+                                    <i class="fas fa-align-right"></i>
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-2 mt-3">
+                                <input type="checkbox" id="inverted-layout" class="rounded">
+                                <label for="inverted-layout" class="text-sm text-gray-700">Layout inversé</label>
+                            </div>
+                        </div>
+
+                        <!-- Styles prêts à l’emploi -->
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2 mb-3">
+                                <i class="fas fa-magic text-purple-500"></i>
+                                Styles de bannière
+                            </label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button id="style-elegant" class="btn btn-secondary btn-sm" data-style="elegant" title="Élégant — style sobre et professionnel">Élégant</button>
+                                <button id="style-modern" class="btn btn-secondary btn-sm active" data-style="modern" title="Moderne — design contemporain">Moderne</button>
+                                <button id="style-discreet" class="btn btn-secondary btn-sm" data-style="discreet" title="Discret — bannière minimaliste">Discret</button>
+                                <button id="style-card" class="btn btn-secondary btn-sm" data-style="card" title="Carte — style carte de visite">Carte</button>
+                                <button id="style-gradient" class="btn btn-secondary btn-sm" data-style="gradient" title="Dégradé — couleurs dégradées">Dégradé</button>
+                                <button id="style-premium" class="btn btn-secondary btn-sm" data-style="premium" title="Premium — style haut de gamme">Premium</button>
+                                <button id="style-minimal" class="btn btn-secondary btn-sm" data-style="minimal" title="Minimal — approche minimaliste">Minimal</button>
+                                <button id="style-framed" class="btn btn-secondary btn-sm" data-style="framed" title="Encadré — avec cadre décoratif">Encadré</button>
+                            </div>
+                        </div>
+
+                        <!-- Aperçu de la bannière -->
+                        <div class="control-group">
+                            <label class="control-label flex items-center gap-2 mb-3">
+                                <i class="fas fa-eye text-orange-500"></i>
+                                Aperçu de la bannière
+                            </label>
+                            <div id="banner-preview" class="banner-preview">
+                                <div class="text-center">
+                                    <h3 class="text-lg font-bold mb-1" id="preview-name">Votre Nom</h3>
+                                    <p class="text-sm opacity-90" id="preview-title">Poste Recherché</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
